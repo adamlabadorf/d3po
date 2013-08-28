@@ -6,10 +6,10 @@ Yet another Javascript library for making d3 charts. After playing with
 e.g. it wasn't very easy to add both points and lines to the same chart.
 This library works as follows:
 
-   var chart = d3po.chart();
-   chart.lines([{x:[0,1,2,3,4,5],y:[3,2,5,1,2,4],color:'blue'}])
-   chart.points([{x:0,y:3.1,size:3,color:'blue'},{x:0.5,y:2.5,size:5,color:'red'}])
-   chart.show();
+    var chart = d3po.chart();
+    chart.lines([{x:[0,1,2,3,4,5],y:[3,2,5,1,2,4],color:'blue'}])
+    chart.points([{x:0,y:3.1,size:3,color:'blue'},{x:0.5,y:2.5,size:5,color:'red'}])
+    chart.show();
 
 I wanted a charting library that 'just works', like those you find in R or python.
 Flexible where it needs to be, unobtrusive API that is amenable to embedding
