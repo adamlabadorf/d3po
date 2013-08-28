@@ -13,17 +13,17 @@ if($) { $(d3po.css).appendTo("head"); }
 
 window.d3po = d3po;
 
-d3po.dispatch = d3.dispatch("update","reset");
+d3po.dispatch = d3.dispatch("update","reset","mouseover","mouseout");
 d3po.util = {
     translate: function(l) {
         return "translate("+l.join(',')+")";
     }
 }
 
-d3po.randomData = function() { //# groups,# points per group
+d3po.randomScatter = function() { //# groups,# points per group
     var data = [],
         groups = 3,
-        points = 500,
+        points = 10,
         shapes = ['circle', 'cross', 'triangle-up', 'triangle-down', 'diamond', 'square'],
         colors = ['red','blue','cyan','green','orange','black','purple']
         random = d3.random.normal();
@@ -42,18 +42,37 @@ d3po.randomData = function() { //# groups,# points per group
     return data;
 }
 
+d3po.randomLine = function() {
+    var x = [],
+        y = [],
+        data = [],
+        points = 15;
+
+    for(var i = 0; i < points; i++) {
+        x.push(d3.random.normal()());
+        y.push(d3.random.normal()());
+    }
+
+    x.sort(function(a,b){return a-b;});
+
+    for(var i = 0; i < points; i++) {
+        data.push({x:x[i],y:y[i]});
+    }
+
+    return data;
+}
+
 d3po.counter = function() {
 
     var counts = {},
-        get = null,
-        getNew = null;
+        get = null;
 
     get = function(key) {
-        return counts.hasOwnProperty(key) ? counts[key] : false;
+        return counts[key];
     }
 
     next = function(key) {
-        if(get(key)) {
+        if(counts.hasOwnProperty(key)) {
             counts[key] += 1;
         } else {
             counts[key] = 0;
@@ -61,7 +80,7 @@ d3po.counter = function() {
         return counts[key];
     }
 
-    return { get: get, next: next }
+    return { get: get, next: next, counts:counts}
 
 }
 
@@ -73,16 +92,66 @@ d3po.chart = function(opts) {
 
     var lines, scatter, axis, grid, zoom, init;
 
-    lines = function() {
+    lines = function(data,line_opts) {
+        line_opts = line_opts || {};
 
+        line_opts = {
+                     color: line_opts.color || "black",
+                     stroke_width: line_opts.stroke_width || 1,
+                     extend_edges: line_opts.extend_edges
+                    };
+
+        var id = "line_"+chartdata.counter.next("line");
+        var line_p = chartdata.chartarea
+                .append("g")
+                .attr({
+                    id: id
+                 })
+                .append("path")
+                .data(data);
+
+        var line_g = d3.svg.line()
+                .x(function(d) { return chartdata.xscale(d.x); })
+                .y(function(d) { return chartdata.yscale(d.y); });
+
+        var update_lines = function() {
+            var prefix = [],
+                postfix = [];
+
+            if(line_opts.extend_edges) {
+                var f = function(p1,p2,x) {
+                    var m = (p1.y-p2.y)/(p1.x-p2.x);
+                    var b = p1.y - m*p1.x;
+                    return m*x+b
+                }
+                var p1 = data[0], p2 = data[1];
+                var x = chartdata.xscale.domain()[0];
+                prefix.push({x:x,y:f(p1,p2,x)});
+
+                var p1 = data[data.length-2], p2 = data[data.length-1];
+                var x = chartdata.xscale.domain()[1];
+                postfix.push({x:x,y:f(p1,p2,x)});
+
+            }
+            line_p.attr({
+                d: line_g(prefix.concat(data,postfix)),
+                stroke: line_opts.color,
+                "stroke-width": line_opts.stroke_width,
+                fill: "none"
+               });
+       }
+       d3po.dispatch.on("update."+id,update_lines);
+       d3po.dispatch.update();
+       d3po.dispatch.reset();
     }
 
     scatter = function(data,scatter_opts) {
         scatter_opts = scatter_opts || {};
 
         scatter_opts = {
-                        scale_mode: scatter_opts.scale_mode || "median"
+                        //scale_mode: scatter_opts.scale_mode || "median"
                        }
+        var id = "scatter_"+chartdata.counter.next('scatter');
 
         // create a d3.scale that converts the datapoint sizes
         // appropriately
@@ -94,22 +163,28 @@ d3po.chart = function(opts) {
                       .range([30,300]);
         }
 
-        chartdata.data_xlim = d3.extent(data,function(d) { return d.x; });
-        chartdata.data_ylim = d3.extent(data,function(d) { return d.y; });
+        var xExtent = d3.zip(chartdata.data_xlim,d3.extent(data,function(d) { return d.x; }));
+        chartdata.data_xlim = [d3.min(xExtent[0]),d3.max(xExtent[1])];
+        var yExtent = d3.zip(chartdata.data_ylim,d3.extent(data,function(d) { return d.y; }));
+        chartdata.data_ylim = [d3.min(yExtent[0]),d3.max(yExtent[1])];
 
         var points = chartdata.chartarea
                  .append("g")
                  .attr({
-                    id: "scatter_"+chartdata.counter.next('scatter')
+                    id: id
                   })
                  .selectAll("path")
                  .data(data);
         points.enter()
-              .append("path");
+              .append("path")
+              .on({
+                    mouseover:d3po.dispatch.mouseover,
+                    mouseout:d3po.dispatch.mouseout
+                  });
 
         update_points = function() {
               points.attr({
-                        d: function(d) { return d3.svg.symbol().type(d.shape).size(size_scale(d.size))(); },
+                        d: function(d) { return d3.svg.symbol().type(d.shape).size(size_scale(d.size || 30))(); },
                         transform: function(d) {
                             var transform_str = d3po.util.translate([chartdata.xscale(d.x),chartdata.yscale(d.y)]);
                             if(d3.event && opts.zoom_opts && opts.zoom_opts.geometric) {
@@ -119,14 +194,12 @@ d3po.chart = function(opts) {
                         },
                         fill: function(d) { return d.color || 'blue'; },
                         "fill-opacity": function(d) { return d.alpha; }
-
                      })
 
         };
-        d3po.dispatch.on("update",update_points);
+        d3po.dispatch.on("update."+id,update_points);
         d3po.dispatch.update();
         d3po.dispatch.reset();
-
 
     }
 
@@ -240,6 +313,73 @@ d3po.chart = function(opts) {
 
     }
 
+    tooltips = function(tooltip_opts) {
+        tooltip_opts = tooltip_opts || {};
+
+        tooltip_opts = {
+                       };
+
+        var id = "tooltip";
+        var tooltip_g = chartdata.svg
+            .append("g")
+            .attr({
+                    id: id,
+                    visibility: "visible",
+                    opacity: 0 
+                  });
+            
+        var update_tooltip = function(d,i) {
+
+            tooltip_g.selectAll("text")
+                     .data(d3.entries(d))
+                     .enter()
+                     .append("text")
+                     .attr({
+                        x: 0,
+                        y: function(d,i) { return 11*i; }
+                      })
+                     .text(function(d,i) {
+                        return d.key+": "+d.value;
+                      });
+
+
+            tooltip_g.append("rect")
+                .attr({
+                        fill: "orange",
+                        stroke: "none",
+                        width: 50,
+                        height: 50,
+                        rx:5,
+                        ry:5
+                      });
+
+            tooltip_g.attr({
+                            transform: function() {
+                                    var transform_str = d3po.util.translate([chartdata.xscale(d.x)+opts.margin.left,chartdata.yscale(d.y)+opts.margin.top]);
+                                    if(d3.event && opts.zoom_opts && opts.zoom_opts.geometric) {
+                                        transform_str += " scale(" + d3.event.scale + ")";
+                                    }
+                                    return transform_str;
+                                }
+                            })
+                     .transition()
+                     .duration(250)
+                     .attr({
+                            opacity: 1,
+                           });
+        }
+        d3po.dispatch.on("mouseover.tooltip",update_tooltip);
+
+        var hide_tooltip = function() {
+            tooltip_g.attr({
+                            opacity: 0
+                           });
+            tooltip_g.selectAll().remove();
+        }
+        d3po.dispatch.on("mouseout.tooltip",hide_tooltip);
+
+    }
+
     // set everything up
     init = function() {
 
@@ -258,7 +398,9 @@ d3po.chart = function(opts) {
             grid: opts.grid == false ? opts.grid : true,
             grid_opts: opts.grid_opts || {},
             zoom: opts.zoom == false ? opts.zoom : true,
-            zoom_opts: opts.zoom_opts || {}
+            zoom_opts: opts.zoom_opts || {},
+            tooltips: opts.tooltips == false ? opts.tooltips : true,
+            tooltips_opts: opts.tooltips_opts || {}
         }
 
         // increment the global chartcount so multiple charts don't
@@ -334,10 +476,9 @@ d3po.chart = function(opts) {
                 chartdata.zoom
                          .x(chartdata.xscale)
                          .y(chartdata.yscale);
-            } else {
-                chartdata.xAxis && chartdata.svg.select('.x.axis').call(chartdata.xAxis);
-                chartdata.yAxis && chartdata.svg.select('.y.axis').call(chartdata.yAxis);
             }
+            chartdata.xAxis && chartdata.svg.select('.x.axis').call(chartdata.xAxis);
+            chartdata.yAxis && chartdata.svg.select('.y.axis').call(chartdata.yAxis);
 
             d3po.dispatch.update();
         }
@@ -347,6 +488,7 @@ d3po.chart = function(opts) {
         opts.axis && axis(opts.axis_opts);
         opts.grid && grid(opts.grid_opts);
         opts.zoom && zoom(opts.zoom_opts);
+        opts.tooltips && tooltips(opts.tooltip_opts);
 
     }
     init();

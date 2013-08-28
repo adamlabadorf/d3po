@@ -23,8 +23,15 @@
                                                }
                                    });
 
-            var test_data = d3po.randomData();
+            var test_data = d3po.randomScatter();
             chart.scatter(test_data);
+            var test_line = d3po.randomLine();
+            chart.lines(test_line,
+                        {
+                            color: "green",
+                            extend_edges:true
+                        });
+            chart.scatter(test_line);
         });
     </script>
     </body>
