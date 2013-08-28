@@ -8,8 +8,23 @@
     <body>
     <script type="text/javascript">
         $(document).ready(function() {
-            var chart = d3po.chart();
-            chart.scatter();
+            var chart = d3po.chart({
+                                    width: 800,
+                                    xlim: [-3,3],
+                                    ylim: [-2,2],
+                                    zoom: true,
+                                    axis: true,
+                                    zoom_opts: {
+                                                geometric:false
+                                               },
+                                    axis_opts: {
+                                                xLabel: "x label",
+                                                yLabel: "y label"
+                                               }
+                                   });
+
+            var test_data = d3po.randomData();
+            chart.scatter(test_data);
         });
     </script>
     </body>
