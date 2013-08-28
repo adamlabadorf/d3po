@@ -13,7 +13,8 @@ This library works as follows:
 
 I wanted a charting library that 'just works', like those you find in R or python.
 Flexible where it needs to be, unobtrusive API that is amenable to embedding
-in other settings (e.g. [IPython notebook](http://ipython.org/notebook.html)).
+in other settings (e.g. [IPython notebook](http://ipython.org/notebook.html)),
+with helpful interactivity.
 
 Dependencies
 ------------
@@ -23,8 +24,15 @@ Dependencies
 Work in progress
 ----------------
 
+Implemented:
+
+    - charting area
+    - axes
+    - d3.svg.zoom functionality by default (can be turned off)
+
 Still lots of features to implement:
 
     - erm, basic plotting functionality...
     - custom tool tips, with embeddable charts in them
     - chart controls (e.g. generic search, toggling of different series, et c)
+    - documentation (nvd3 is pretty bad about this as of this writing)
