@@ -114,6 +114,11 @@ d3po.chart = function(opts) {
                 .x(function(d) { return chartdata.xscale(d.x); })
                 .y(function(d) { return chartdata.yscale(d.y); });
 
+        var xExtent = d3.zip(chartdata.data_xlim,d3.extent(data,function(d) { return d.x; }));
+        chartdata.data_xlim = [d3.min(xExtent[0]),d3.max(xExtent[1])];
+        var yExtent = d3.zip(chartdata.data_ylim,d3.extent(data,function(d) { return d.y; }));
+        chartdata.data_ylim = [d3.min(yExtent[0]),d3.max(yExtent[1])];
+
         var update_lines = function() {
             var prefix = [],
                 postfix = [];
@@ -341,7 +346,6 @@ d3po.chart = function(opts) {
                      .text(function(d,i) {
                         return d.key+": "+d.value;
                       });
-
 
             tooltip_g.append("rect")
                 .attr({
