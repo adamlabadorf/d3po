@@ -62,6 +62,51 @@ d3po.randomLine = function() {
     return data;
 }
 
+d3po.randomBoxes = function() {
+    var data = [],
+        boxes = 20,
+        colors = ['red','blue','cyan','green','orange','black','purple'];
+    for(var i = 0; i < boxes; i++) {
+        data.push({
+                    x:Math.random(),
+                    y:Math.random(),
+                    w:100*Math.max(0.1,d3.random.normal(1)()),
+                    h:100*Math.max(0.1,d3.random.normal(1)()),
+                    fill: colors[i%colors.length],
+                    stroke: colors[(i+3)%colors.length],
+                    alpha: Math.min(1,0.5+Math.random())
+                    });
+    }
+
+    return data;
+
+}
+
+d3po.randomBoxGrid = function() {
+    var data = [],
+        rows = 10,
+        cols = 10,
+        colors = ['red','blue','cyan','green','orange','black','purple'],
+        w;
+
+    for(var i = 0; i < rows;i++) {
+        for(var j = 0; j < cols; j++) {
+            w = 100*Math.random();
+            data.push({
+                        x:i,
+                        y:j,
+                        w:w,
+                        h:w,
+                        fill: colors[i%colors.length],
+                        stroke: colors[(i+3)%colors.length],
+                        alpha: Math.min(1,0.5+Math.random())
+                        });
+
+        }
+    }
+
+    return data;
+}
 d3po.counter = function() {
 
     var counts = {},
@@ -203,6 +248,55 @@ d3po.chart = function(opts) {
 
         };
         d3po.dispatch.on("update."+id,update_points);
+        d3po.dispatch.update();
+        d3po.dispatch.reset();
+
+    }
+
+    boxes = function(data,box_opts) {
+        box_opts = box_opts || {};
+
+        box_opts = {
+                        //scale_mode: box_opts.scale_mode || "median"
+                   }
+        var id = "boxes_"+chartdata.counter.next('boxes');
+
+        var boxes = chartdata.chartarea
+                 .append("g")
+                 .attr({
+                    id: id
+                  })
+                 .selectAll("rect")
+                 .data(data);
+        boxes.enter()
+              .append("rect")
+              .on({
+                    mouseover:d3po.dispatch.mouseover,
+                    mouseout:d3po.dispatch.mouseout
+                  });
+
+        update_boxes = function() {
+              boxes.attr({
+                        width: function(d) { return d.w; },
+                        height: function(d) { return d.h; },
+                        transform: function(d) {
+                            var transform = d3.transform(d3.select(this).attr("transform"));
+                            transform.translate = [chartdata.xscale(d.x), chartdata.yscale(d.y)];
+                            if(d3.event && opts.zoom_opts && opts.zoom_opts.geometric) {
+                                transform.scale = d3.event.scale;
+                            }
+                            return transform.toString();
+                        }
+
+                    })
+                    .style({
+                        fill: function(d) { return d.fill || 'blue'; },
+                        stroke: function(d) { return d.stroke || 'none'; },
+                        "fill-opacity": function(d) { return d.alpha; }
+                     })
+
+        };
+        d3po.dispatch.on("update."+id,update_boxes);
         d3po.dispatch.update();
         d3po.dispatch.reset();
 
@@ -547,6 +641,7 @@ d3po.chart = function(opts) {
 
     return {lines:lines,
             scatter:scatter,
+            boxes:boxes,
             bars:bars,
             axis:axis
            }

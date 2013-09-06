@@ -6,16 +6,22 @@
         <script type="text/javascript" src="d3po.js" ></script>
     </head>
     <body>
+    <div id="scatterline">
+    </div>
+    <div id="boxes">
+    </div>
     <script type="text/javascript">
         $(document).ready(function() {
+        /*
             var chart = d3po.chart({
+                                    target: "#scatterline",
                                     width: 800,
                                     xlim: [-3,3],
                                     ylim: [-2,2],
                                     zoom: true,
                                     axis: true,
                                     zoom_opts: {
-                                                geometric:false
+                                                geometric:true
                                                },
                                     axis_opts: {
                                                 xLabel: "x label",
@@ -32,6 +38,18 @@
                             extend_edges:true
                         });
             chart.scatter(test_line);
+    */
+            var chart = d3po.chart({
+                                    target: "#boxes",
+                                    width: 800,
+                                    tooltips: false,
+                                    zoom_opts: {
+                                                geometric:true
+                                                }
+                                    });
+            var test_boxes = d3po.randomBoxGrid();
+            console.log(test_boxes);
+            chart.boxes(test_boxes);
         });
     </script>
     </body>
