@@ -230,7 +230,7 @@ d3po.chart = function(opts) {
 
         // add the x and y axes to the svg
         var xAxis_g = chartdata.svg
-                        .append("g")
+                        .insert("g","#chartarea")
                         .attr({
                             "transform":d3po.util.translate([opts.margin.left,(opts.margin.top+chartdata.chart_height)]),
                             "class":"x axis"
@@ -238,7 +238,7 @@ d3po.chart = function(opts) {
                         .call(xAxis);
 
         var yAxis_g = chartdata.svg
-                .append("g")
+                .insert("g","#chartarea")
                 .attr({
                     "class": "y axis",
                     transform: d3po.util.translate([opts.margin.left,opts.margin.top])
@@ -317,6 +317,7 @@ d3po.chart = function(opts) {
         tooltip_opts = tooltip_opts || {};
 
         tooltip_opts = {
+                        offset: tooltip_opts.offset == undefined ? 10 : tooltip_opts.offset
                        };
 
         var id = "tooltip";
@@ -330,32 +331,46 @@ d3po.chart = function(opts) {
             
         var update_tooltip = function(d,i) {
 
+
             tooltip_g.selectAll("text")
                      .data(d3.entries(d))
                      .enter()
                      .append("text")
                      .attr({
-                        x: 0,
-                        y: function(d,i) { return 11*i; }
+                        x: 3,
+                        y: function(d,i) { return 11*i+11; }
                       })
                      .text(function(d,i) {
                         return d.key+": "+d.value;
                       });
 
-
-            tooltip_g.append("rect")
+            var tooltip_rect = tooltip_g.node().getBoundingClientRect();
+            tooltip_g.insert("rect",":first-child")
                 .attr({
-                        fill: "orange",
-                        stroke: "none",
-                        width: 50,
-                        height: 50,
+                        fill: "white",
+                        stroke: "black",
+                        "stroke-width": 0.5,
+                        opacity: 0.8,
+                        width: tooltip_rect.width*1.1,
+                        height: tooltip_rect.height*1.1,
                         rx:5,
                         ry:5
                       });
 
+            // figure out where to put the tooltip
+
+            tooltip_rect.x = chartdata.xscale(d.x)+opts.margin.left+tooltip_opts.offset;
+            tooltip_rect.y = chartdata.yscale(d.y)+opts.margin.top+tooltip_opts.offset;
+
+            if(tooltip_rect.x+tooltip_rect.width > opts.width) {
+                tooltip_rect.x = chartdata.xscale(d.x)+opts.margin.left-tooltip_rect.width-tooltip_opts.offset;
+            }
+            if(tooltip_rect.y+tooltip_rect.height > opts.height) {
+                tooltip_rect.y = chartdata.yscale(d.y)+opts.margin.top-tooltip_rect.height-tooltip_opts.offset;
+            }
             tooltip_g.attr({
                             transform: function() {
-                                    var transform_str = d3po.util.translate([chartdata.xscale(d.x)+opts.margin.left,chartdata.yscale(d.y)+opts.margin.top]);
+                                    var transform_str = d3po.util.translate([tooltip_rect.x,tooltip_rect.y]);
                                     if(d3.event && opts.zoom_opts && opts.zoom_opts.geometric) {
                                         transform_str += " scale(" + d3.event.scale + ")";
                                     }
@@ -374,7 +389,8 @@ d3po.chart = function(opts) {
             tooltip_g.attr({
                             opacity: 0
                            });
-            tooltip_g.selectAll().remove();
+            tooltip_g.selectAll("rect").remove();
+            tooltip_g.selectAll("text").remove();
         }
         d3po.dispatch.on("mouseout.tooltip",hide_tooltip);
 
@@ -434,6 +450,18 @@ d3po.chart = function(opts) {
                    height:chart_height
                   });
 
+        svg.append("rect")
+                 .attr({
+                        x: opts.margin.left,
+                        y: opts.margin.top,
+                        width: chart_width,
+                        height: chart_height
+                  })
+                 .style({
+                        fill: opts.background
+                  });
+
+
         var chartarea = svg.append("g")
                            .attr({
                                 id: "chartarea",
@@ -441,14 +469,14 @@ d3po.chart = function(opts) {
                                 transform: d3po.util.translate([opts.margin.left,opts.margin.top])
                             });
 
+        // add an invisible rect so the zoom element works properly
         chartarea.append("rect")
                  .attr({
                         width: chart_width,
-                        height: chart_height
-                  })
-                 .style({
-                        fill: opts.background
+                        height: chart_height,
+                        opacity: 0
                   });
+
 
         // initialize some objects that will be used later
         chartdata = {
