@@ -336,6 +336,13 @@ d3po.chart = function(opts) {
             
         var update_tooltip = function(d,i) {
 
+            var pt = d3.select(this);
+            var pt_transform = d3.transform(pt.attr("transform"));
+            pt_transform.scale = [2,2];
+            pt.transition()
+              .duration(300)
+              .ease("bounce")
+              .attr("transform",pt_transform.toString());
 
             tooltip_g.selectAll("text")
                      .data(d3.entries(d))
@@ -391,11 +398,23 @@ d3po.chart = function(opts) {
         d3po.dispatch.on("mouseover.tooltip",update_tooltip);
 
         var hide_tooltip = function() {
-            tooltip_g.attr({
+
+            var pt = d3.select(this);
+            var pt_transform = d3.transform(pt.attr("transform"));
+            pt_transform.scale = [1,1];
+            pt.transition()
+              .duration(300)
+              .ease("bounce")
+              .attr("transform",pt_transform.toString());
+
+
+            tooltip_g.transition()
+                     .duration(250)
+                     .attr({
                             opacity: 0
                            });
-            tooltip_g.selectAll("rect").remove();
-            tooltip_g.selectAll("text").remove();
+            tooltip_g.selectAll("rect").transition().duration(250).remove();
+            tooltip_g.selectAll("text").transition().duration(250).remove();
         }
         d3po.dispatch.on("mouseout.tooltip",hide_tooltip);
 
