@@ -91,7 +91,7 @@ d3po.randomBoxGrid = function() {
 
     for(var i = 0; i < rows;i++) {
         for(var j = 0; j < cols; j++) {
-            w = 100*Math.random();
+            w = Math.random();
             data.push({
                         x:i,
                         y:j,
@@ -277,13 +277,14 @@ d3po.chart = function(opts) {
 
         update_boxes = function() {
               boxes.attr({
-                        width: function(d) { return d.w; },
-                        height: function(d) { return d.h; },
+                        // TODO I was fixing the width and height, it's wrong
+                        width: function(d) { return chartdata.xscale(d.w); },
+                        height: function(d) { return chartdata.yscale(d.h); },
                         transform: function(d) {
                             var transform = d3.transform(d3.select(this).attr("transform"));
                             transform.translate = [chartdata.xscale(d.x), chartdata.yscale(d.y)];
                             if(d3.event && opts.zoom_opts && opts.zoom_opts.geometric) {
-                                transform.scale = d3.event.scale;
+                                //transform.scale = [d3.event.scale,d3.event.scale];
                             }
                             return transform.toString();
                         }
