@@ -3,11 +3,14 @@ var d3po = window.d3po || {};
 d3po.version = '0.1';
 d3po.chartcount = 0;
 
+// this keeps track of one chart globally for routing keystroke events etc.
+d3po.curr_chart = null;
+
 d3po.css = '<style type="text/css">' +
            'svg { font: 10px sans-serif; }' +
            '.axis path { fill: none; stroke: #333; }' +
            '.axis line { fill: none; stroke: #999; stroke-dasharray: 2,2; }' +
-           '.label { color: black; }' + 
+           '.label { color: black; }' +
            '</style>';
 if($) { $(d3po.css).appendTo("head"); }
 
@@ -16,19 +19,26 @@ window.d3po = d3po;
 d3po.dispatch = d3.dispatch("update","reset","mouseover","mouseout");
 d3po.util = {
     translate: function(l) {
+        "use strict";
         return "translate("+l.join(',')+")";
     }
-}
+};
+
+d3po.shapes = ['circle', 'cross', 'triangle-up', 'triangle-down', 'diamond',
+               'square'];
+d3po.colors = ['red','blue','cyan','green','orange','black','purple'];
 
 d3po.randomScatter = function() { //# groups,# points per group
-    var data = [],
-        groups = 3,
+    "use strict";
+    var i,
+        data = [],
+        //groups = 3,
         points = 10,
-        shapes = ['circle', 'cross', 'triangle-up', 'triangle-down', 'diamond', 'square'],
-        colors = ['red','blue','cyan','green','orange','black','purple']
+        shapes = d3po.shapes,
+        colors = d3po.colors,
         random = d3.random.normal();
 
-    for(var i = 0; i < points; i++) {
+    for(i = 0; i < points; i+=1) {
         data.push({
                     x: random(), 
                     y: random(), 
@@ -40,33 +50,37 @@ d3po.randomScatter = function() { //# groups,# points per group
     }
 
     return data;
-}
+};
 
 d3po.randomLine = function() {
-    var x = [],
+    "use strict";
+    var i,
+        x = [],
         y = [],
         data = [],
         points = 15;
 
-    for(var i = 0; i < points; i++) {
+    for(i = 0; i < points; i+=1) {
         x.push(d3.random.normal()());
         y.push(d3.random.normal()());
     }
 
     x.sort(function(a,b){return a-b;});
 
-    for(var i = 0; i < points; i++) {
+    for(i = 0; i < points; i+=1) {
         data.push({x:x[i],y:y[i]});
     }
 
     return data;
-}
+};
 
 d3po.randomBoxes = function() {
-    var data = [],
+    "use strict";
+    var i,
+        data = [],
         boxes = 20,
-        colors = ['red','blue','cyan','green','orange','black','purple'];
-    for(var i = 0; i < boxes; i++) {
+        colors = d3po.colors;
+    for(i = 0; i < boxes; i+=1) {
         data.push({
                     x:Math.random(),
                     y:Math.random(),
@@ -80,17 +94,19 @@ d3po.randomBoxes = function() {
 
     return data;
 
-}
+};
 
 d3po.randomBoxGrid = function() {
-    var data = [],
+    "use strict";
+    var i,j,
+        data = [],
         rows = 10,
         cols = 10,
-        colors = ['red','blue','cyan','green','orange','black','purple'],
+        colors = d3po.colors,
         w;
 
-    for(var i = 0; i < rows;i++) {
-        for(var j = 0; j < cols; j++) {
+    for(i = 0; i < rows;i+=1) {
+        for(j = 0; j < cols; j+=1) {
             w = Math.random();
             data.push({
                         x:i,
@@ -106,48 +122,60 @@ d3po.randomBoxGrid = function() {
     }
 
     return data;
-}
+};
+
 d3po.counter = function() {
+    "use strict";
 
     var counts = {},
-        get = null;
+        get,
+        inc;
 
     get = function(key) {
         return counts[key];
-    }
+    };
 
-    next = function(key) {
+    inc = function(key) {
         if(counts.hasOwnProperty(key)) {
             counts[key] += 1;
         } else {
             counts[key] = 0;
         }
         return counts[key];
-    }
+    };
 
-    return { get: get, next: next, counts:counts}
-
-}
+    return { get: get,
+             inc: inc,
+             counts:counts
+           };
+};
 
 d3po.chart = function(opts) {
+    "use strict";
 
-    var opts = opts || {};
-    var chartdata = {};
-    var data = {};
-
-    var lines, scatter, axis, grid, zoom, init;
+    var chart_opts = opts || {},
+        chart_data = {},
+        lines,
+        scatter,
+        boxes,
+        bars,
+        axis,
+        grid,
+        zoom,
+        legend,
+        tooltips,
+        hotkeys,
+        init;
 
     lines = function(data,line_opts) {
-        line_opts = line_opts || {};
-
-        line_opts = {
-                     color: line_opts.color || "black",
-                     stroke_width: line_opts.stroke_width || 1,
-                     extend_edges: line_opts.extend_edges
-                    };
-
-        var id = "line_"+chartdata.counter.next("line");
-        var line_p = chartdata.chartarea
+        var lopts = line_opts || {},
+            id = "line_"+chart_data.counter.inc("line"),
+            line_p,
+            line_g,
+            xExtent, yExtent,
+            update_lines;
+        
+        line_p = chart_data.chartarea
                 .append("g")
                 .attr({
                     id: id
@@ -155,70 +183,91 @@ d3po.chart = function(opts) {
                 .append("path")
                 .data(data);
 
-        var line_g = d3.svg.line()
-                .x(function(d) { return chartdata.xscale(d.x); })
-                .y(function(d) { return chartdata.yscale(d.y); });
+        line_g = d3.svg.line()
+                .x(function(d) { return chart_data.xscale(d.x); })
+                .y(function(d) { return chart_data.yscale(d.y); });
 
-        var xExtent = d3.zip(chartdata.data_xlim,d3.extent(data,function(d) { return d.x; }));
-        chartdata.data_xlim = [d3.min(xExtent[0]),d3.max(xExtent[1])];
-        var yExtent = d3.zip(chartdata.data_ylim,d3.extent(data,function(d) { return d.y; }));
-        chartdata.data_ylim = [d3.min(yExtent[0]),d3.max(yExtent[1])];
+        lopts = {
+                 color: lopts.color || "black",
+                 stroke_width: lopts.stroke_width || 1,
+                 extend_edges: lopts.extend_edges
+                };
 
-        var update_lines = function() {
+        xExtent = d3.zip(chart_data.data_xlim,
+                         d3.extent(data,function(d) { return d.x; }));
+        chart_data.data_xlim = [d3.min(xExtent[0]),d3.max(xExtent[1])];
+
+        yExtent = d3.zip(chart_data.data_ylim,
+                         d3.extent(data,function(d) { return d.y; }));
+        chart_data.data_ylim = [d3.min(yExtent[0]),d3.max(yExtent[1])];
+
+        update_lines = function() {
             var prefix = [],
-                postfix = [];
+                postfix = [],
+                f, p1, p2, x;
 
-            if(line_opts.extend_edges) {
-                var f = function(p1,p2,x) {
-                    var m = (p1.y-p2.y)/(p1.x-p2.x);
-                    var b = p1.y - m*p1.x;
-                    return m*x+b
-                }
-                var p1 = data[0], p2 = data[1];
-                var x = chartdata.xscale.domain()[0];
+            if(lopts.extend_edges) {
+                f = function(p1,p2,x) {
+                        var m = (p1.y-p2.y)/(p1.x-p2.x),
+                            b = p1.y - m*p1.x;
+                        return m*x+b;
+                    };
+                p1 = data[0];
+                p2 = data[1];
+                x = chart_data.xscale.domain()[0];
                 prefix.push({x:x,y:f(p1,p2,x)});
 
-                var p1 = data[data.length-2], p2 = data[data.length-1];
-                var x = chartdata.xscale.domain()[1];
+                p1 = data[data.length-2];
+                p2 = data[data.length-1];
+                x = chart_data.xscale.domain()[1];
                 postfix.push({x:x,y:f(p1,p2,x)});
-
             }
             line_p.attr({
                 d: line_g(prefix.concat(data,postfix)),
-                stroke: line_opts.color,
-                "stroke-width": line_opts.stroke_width,
+                stroke: lopts.color,
+                "stroke-width": lopts.stroke_width,
                 fill: "none"
                });
-       }
-       d3po.dispatch.on("update."+id,update_lines);
+       };
+       d3po.dispatch.on("update."+opts.name+"."+id,update_lines);
        d3po.dispatch.update();
        d3po.dispatch.reset();
-    }
+    };
 
     scatter = function(data,scatter_opts) {
-        scatter_opts = scatter_opts || {};
+        var sopts = scatter_opts || {},
+            id = "scatter_"+chart_data.counter.inc('scatter'),
+            size_min, size_max, size_scale,
+            xExtent, yExtent,
+            points, update_points;
 
-        scatter_opts = {
-                        //scale_mode: scatter_opts.scale_mode || "median"
-                       }
-        var id = "scatter_"+chartdata.counter.next('scatter');
+        sopts = {
+                   //scale_mode: sopts.scale_mode || "median"
+                };
+        sopts.scale_mode = "median";
 
         // create a d3.scale that converts the datapoint sizes
         // appropriately
-        var size_min = d3.min(data,function(d) { return d.size; });
-        var size_max = d3.max(data,function(d) { return d.size; });
-        var size_scale = d3.scale.linear();
+        size_min = d3.min(data,function(d) { return d.size; });
+        size_max = d3.max(data,function(d) { return d.size; });
+        size_scale = d3.scale.linear();
+
         if(size_min && size_max) {
             size_scale.domain([size_min,size_max])
                       .range([30,300]);
         }
 
-        var xExtent = d3.zip(chartdata.data_xlim,d3.extent(data,function(d) { return d.x; }));
-        chartdata.data_xlim = [d3.min(xExtent[0]),d3.max(xExtent[1])];
-        var yExtent = d3.zip(chartdata.data_ylim,d3.extent(data,function(d) { return d.y; }));
-        chartdata.data_ylim = [d3.min(yExtent[0]),d3.max(yExtent[1])];
+        xExtent = d3.zip(chart_data.data_xlim,
+                         d3.extent(data,function(d) { return d.x; })
+                        );
+        chart_data.data_xlim = [d3.min(xExtent[0]),d3.max(xExtent[1])];
 
-        var points = chartdata.chartarea
+        yExtent = d3.zip(chart_data.data_ylim,
+                         d3.extent(data,function(d) { return d.y; })
+                        );
+        chart_data.data_ylim = [d3.min(yExtent[0]),d3.max(yExtent[1])];
+
+        points = chart_data.chartarea
                  .append("g")
                  .attr({
                     id: id
@@ -234,57 +283,113 @@ d3po.chart = function(opts) {
 
         update_points = function() {
               points.attr({
-                        d: function(d) { return d3.svg.symbol().type(d.shape).size(size_scale(d.size || 30))(); },
+                        d: function(d) {
+                            return d3.svg.symbol()
+                                         .type(d.shape)
+                                         .size(size_scale(d.size || 30))();
+                        },
                         transform: function(d) {
-                            var transform_str = d3po.util.translate([chartdata.xscale(d.x),chartdata.yscale(d.y)]);
-                            if(d3.event && opts.zoom_opts && opts.zoom_opts.geometric) {
-                                transform_str += " scale(" + d3.event.scale + ")";
+                            var trnsf = d3.transform(d3.select(this)
+                                                       .attr('transform')
+                                                    );
+                            trnsf.translate = [chart_data.xscale(d.x),
+                                               chart_data.yscale(d.y)];
+                            if(d3.event && opts.zoom_opts &&
+                               opts.zoom_opts.geometric) {
+                                trnsf.scale = d3.event.scale;
                             }
-                            return transform_str;
+                            return trnsf.toString();
                         },
                         fill: function(d) { return d.color || 'blue'; },
                         "fill-opacity": function(d) { return d.alpha; }
-                     })
+                     });
 
         };
-        d3po.dispatch.on("update."+id,update_points);
+        d3po.dispatch.on("update."+opts.name+"."+id,update_points);
         d3po.dispatch.update();
         d3po.dispatch.reset();
 
-    }
+    };
 
     boxes = function(data,box_opts) {
-        box_opts = box_opts || {};
+        var bopts = box_opts || {},
+            id,
+            box_g, update_boxes,
+            get_dims,
+            min_x, max_x, min_y, max_y;
+        bopts = {
+                 anchor: bopts.anchor || "origin"
+                };
+        id = "boxes_"+chart_data.counter.inc('boxes');
 
-        box_opts = {
-                        //scale_mode: box_opts.scale_mode || "median"
-                   }
-        var id = "boxes_"+chartdata.counter.next('boxes');
-
-        var boxes = chartdata.chartarea
+        box_g = chart_data.chartarea
                  .append("g")
                  .attr({
                     id: id
                   })
                  .selectAll("rect")
                  .data(data);
-        boxes.enter()
+        box_g.enter()
               .append("rect")
               .on({
                     mouseover:d3po.dispatch.mouseover,
                     mouseout:d3po.dispatch.mouseout
                   });
 
+        get_dims = function(d) {
+            return [Math.abs(chart_data.xscale(d.w)-chart_data.xscale(0)),
+                    Math.abs(chart_data.yscale(d.h)-chart_data.yscale(0))];
+        };
+
+        min_x = d3.min(data,function(d) {
+            if(bopts.anchor == "center") {
+                return d.x-d.w/2;
+            }
+            return d.x;
+        });
+        max_x = d3.max(data,function(d) {
+            if(bopts.anchor == "center") {
+                return d.x+d.w/2;
+            }
+            return d.x+d.w;
+        });
+
+        min_y = d3.min(data,function(d) {
+            if(bopts.anchor == "center") {
+                return d.y-d.h/2;
+            }
+            return d.y;
+        });
+        max_y = d3.max(data,function(d) {
+            if(bopts.anchor == "center") {
+                return d.y+d.h/2;
+            }
+            return d.y+d.h;
+        });
+
+        chart_data.data_xlim = [Math.min(chart_data.data_xlim[0],min_x),
+                                Math.max(chart_data.data_xlim[1],max_x)];
+
+        chart_data.data_ylim = [Math.min(chart_data.data_ylim[0],min_y),
+                                Math.max(chart_data.data_ylim[1],max_y)];
+
         update_boxes = function() {
-              boxes.attr({
-                        // TODO I was fixing the width and height, it's wrong
-                        width: function(d) { return chartdata.xscale(d.w); },
-                        height: function(d) { return chartdata.yscale(d.h); },
+              box_g.attr({
+                        width: function(d) { return get_dims(d)[0]; },
+                        height: function(d) { return  get_dims(d)[1]; },
                         transform: function(d) {
-                            var transform = d3.transform(d3.select(this).attr("transform"));
-                            transform.translate = [chartdata.xscale(d.x), chartdata.yscale(d.y)];
-                            if(d3.event && opts.zoom_opts && opts.zoom_opts.geometric) {
-                                //transform.scale = [d3.event.scale,d3.event.scale];
+                            var transform = d3.transform(d3.select(this)
+                                                           .attr("transform")),
+                                dims = get_dims(d);
+                            if(bopts.anchor == "center") {
+                                transform.translate =
+                                        [chart_data.xscale(d.x)-dims[0]/2,
+                                         chart_data.yscale(d.y)-dims[1]/2];
+                            }
+                            else {
+                                transform.translate =
+                                        [chart_data.xscale(d.x),
+                                         chart_data.yscale(d.y)-dims[1]];
                             }
                             return transform.toString();
                         }
@@ -294,81 +399,101 @@ d3po.chart = function(opts) {
                         fill: function(d) { return d.fill || 'blue'; },
                         stroke: function(d) { return d.stroke || 'none'; },
                         "fill-opacity": function(d) { return d.alpha; }
-                     })
+                     });
 
         };
-        d3po.dispatch.on("update."+id,update_boxes);
+        d3po.dispatch.on("update."+opts.name+"."+id,update_boxes);
         d3po.dispatch.update();
         d3po.dispatch.reset();
 
-    }
+    };
 
     bars = function() {
-
-    }
+        console.log('not implemented yet');
+    };
 
     axis = function(axis_opts) {
-        axis_opts = axis_opts || {};
-        axis_opts = {
-            xLabel: axis_opts.xLabel || null,
-            yLabel: axis_opts.yLabel || null,
-            tickSize: axis_opts.tickSize || 4,
+        var aopts = axis_opts || {},
+            xAxis, yAxis, axis_transform,
+            xAxis_g, yAxis_g;
+
+        aopts = {
+            xLabel: aopts.xLabel || null,
+            yLabel: aopts.yLabel || null,
+            tickSize: aopts.tickSize || 4
         };
 
-        var xAxis = d3.svg
-                      .axis()
-                      .scale(chartdata.xscale)
-                      .orient("bottom")
-                      .tickSize(-chartdata.chart_height);
-                      //.tickSize(axis_opts.tickSize);
+        xAxis = d3.svg
+                  .axis()
+                  .scale(chart_data.xscale)
+                  .orient("bottom")
+                  .tickSize(-chart_data.chart_height);
+                  //.tickSize(aopts.tickSize);
 
-        var yAxis = d3.svg
-                      .axis()
-                      .scale(chartdata.yscale)
-                      .orient("left")
-                      .tickSize(-chartdata.chart_width);
+        yAxis = d3.svg
+                  .axis()
+                  .scale(chart_data.yscale)
+                  .orient("left")
+                  .tickSize(-chart_data.chart_width);
 
         // add the x and y axes to the svg
-        var xAxis_g = chartdata.svg
+        axis_transform = d3.transform()
+                           .translate([
+                                   opts.margin.left,
+                                   (opts.margin.top+chart_data.chart_height)
+                                  ]);
+        xAxis_g = chart_data.svg
                         .insert("g","#chartarea")
                         .attr({
-                            "transform":d3po.util.translate([opts.margin.left,(opts.margin.top+chartdata.chart_height)]),
+                            "transform":axis_transform.toString(),
                             "class":"x axis"
                          })
                         .call(xAxis);
 
-        var yAxis_g = chartdata.svg
+        yAxis_g = chart_data.svg
                 .insert("g","#chartarea")
                 .attr({
                     "class": "y axis",
-                    transform: d3po.util.translate([opts.margin.left,opts.margin.top])
+                    transform: d3.transform()
+                                 .translate([opts.margin.left,
+                                             opts.margin.top]
+                                           )
+                                 .toString()
                  })
                 .call(yAxis);
 
         // add x and y labels if set
-        if(axis_opts.xLabel) {
+        if(aopts.xLabel) {
             xAxis_g.append("text")
                    .attr({
                           "class": "x label",
                           "text-anchor": "middle",
-                          transform: d3po.util.translate([chartdata.chart_width/2,25])
+                          transform: d3.transform()
+                                       .translate([chart_data.chart_width/2,
+                                                   25])
+                                       .toString()
                          })
-                   .text(axis_opts.xLabel);
+                   .text(aopts.xLabel);
         }
-        if(axis_opts.yLabel) {
+        if(aopts.yLabel) {
             yAxis_g.append("text")
                    .attr({
                           "class": "x label",
                           "text-anchor": "middle",
-                          transform: d3po.util.translate([-25,chartdata.chart_height/2])+"rotate(-90)"
+                          transform: d3.transform()
+                                       .translate([
+                                            -25,
+                                            chart_data.chart_height/2])
+                                       .rotate(-90)
+                                       .toString()
                          })
-                   .text(axis_opts.yLabel);
+                   .text(aopts.yLabel);
         }
 
-        chartdata.xAxis = xAxis;
-        chartdata.yAxis = yAxis;
+        chart_data.xAxis = xAxis;
+        chart_data.yAxis = yAxis;
 
-    }
+    };
 
     grid = function(grid_opts) {
         grid_opts = grid_opts || {};
@@ -376,52 +501,58 @@ d3po.chart = function(opts) {
             color: grid_opts.color || '#eee'
         };
 
-        chartdata.chartarea
+        chart_data.chartarea
                 .append("g")
                 .attr({
                 });
-    }
+    };
 
     zoom = function(zoom_opts) {
 
-        zoom_opts = zoom_opts || {};
+        var zopts = zoom_opts || {},
+            zoomed, z;
 
-        zoom_opts = {
-                     geometric: zoom_opts.geometric || false
-                    }
+        zopts = {
+                     geometric: zopts.geometric || false
+                    };
 
-        opts.zoom_opts = zoom_opts;
+        opts.zopts = zopts;
 
         // zoom is currently only implemented when axis is on
         if(opts.axis) {
             opts.zoom = true;
-            var zoomed = function() {
-                chartdata.svg.select(".x.axis").call(chartdata.xAxis);
-                chartdata.svg.select(".y.axis").call(chartdata.yAxis);
+            zoomed = function() {
+                chart_data.svg.select(".x.axis").call(chart_data.xAxis);
+                chart_data.svg.select(".y.axis").call(chart_data.yAxis);
                 d3po.dispatch.update();
-            }
-            var z = d3.behavior.zoom()
-                      .x(chartdata.xscale)
-                      .y(chartdata.yscale)
+            };
+            z = d3.behavior.zoom()
+                      .x(chart_data.xscale)
+                      .y(chart_data.yscale)
                       .on("zoom",zoomed);
-            chartdata.zoom = z;
-            chartdata.chartarea.call(z);
+            chart_data.zoom = z;
+            chart_data.chartarea.call(z);
         }
-    }
+    };
 
-    legend = function(legend_opts) {
-
-    }
+    legend = function() {
+        console.log('not implemented yet');
+    };
 
     tooltips = function(tooltip_opts) {
-        tooltip_opts = tooltip_opts || {};
+        var topts = tooltip_opts || {},
+            id,
+            tooltip_g,
+            update_tooltip,
+            hide_tooltip;
 
-        tooltip_opts = {
-                        offset: tooltip_opts.offset == undefined ? 10 : tooltip_opts.offset
+        topts = {
+                        offset: topts.offset == undefined ?
+                                    10 : topts.offset
                        };
 
-        var id = "tooltip";
-        var tooltip_g = chartdata.svg
+        id = "tooltip";
+        tooltip_g = chart_data.svg
             .append("g")
             .attr({
                     id: id,
@@ -429,10 +560,15 @@ d3po.chart = function(opts) {
                     opacity: 0 
                   });
             
-        var update_tooltip = function(d,i) {
+        update_tooltip = function(d) {
 
-            var pt = d3.select(this);
-            var pt_transform = d3.transform(pt.attr("transform"));
+            var pt,
+                pt_transform,
+                tooltip_rect;
+
+            pt = d3.select(this);
+            pt_transform = d3.transform(pt.attr("transform"));
+
             pt_transform.scale = [2,2];
             pt.transition()
               .duration(300)
@@ -445,13 +581,13 @@ d3po.chart = function(opts) {
                      .append("text")
                      .attr({
                         x: 3,
-                        y: function(d,i) { return 11*i+11; }
+                        y: function(d,i) { d.x; return 11*i+11; }
                       })
-                     .text(function(d,i) {
+                     .text(function(d) {
                         return d.key+": "+d.value;
                       });
 
-            var tooltip_rect = tooltip_g.node().getBoundingClientRect();
+            tooltip_rect = tooltip_g.node().getBoundingClientRect();
             tooltip_g.insert("rect",":first-child")
                 .attr({
                         fill: "white",
@@ -466,36 +602,51 @@ d3po.chart = function(opts) {
 
             // figure out where to put the tooltip
 
-            tooltip_rect.x = chartdata.xscale(d.x)+opts.margin.left+tooltip_opts.offset;
-            tooltip_rect.y = chartdata.yscale(d.y)+opts.margin.top+tooltip_opts.offset;
+            tooltip_rect.x = chart_data.xscale(d.x)+
+                             opts.margin.left+
+                             topts.offset;
+
+            tooltip_rect.y = chart_data.yscale(d.y)+
+                             opts.margin.top+
+                             topts.offset;
 
             if(tooltip_rect.x+tooltip_rect.width > opts.width) {
-                tooltip_rect.x = chartdata.xscale(d.x)+opts.margin.left-tooltip_rect.width-tooltip_opts.offset;
+                tooltip_rect.x = chart_data.xscale(d.x)+
+                                 opts.margin.left-
+                                 tooltip_rect.width-topts.offset;
             }
             if(tooltip_rect.y+tooltip_rect.height > opts.height) {
-                tooltip_rect.y = chartdata.yscale(d.y)+opts.margin.top-tooltip_rect.height-tooltip_opts.offset;
+                tooltip_rect.y = chart_data.yscale(d.y) +
+                                 opts.margin.top -
+                                 tooltip_rect.height -
+                                 topts.offset;
             }
             tooltip_g.attr({
                             transform: function() {
-                                    var transform_str = d3po.util.translate([tooltip_rect.x,tooltip_rect.y]);
-                                    if(d3.event && opts.zoom_opts && opts.zoom_opts.geometric) {
-                                        transform_str += " scale(" + d3.event.scale + ")";
+                                    var transform = d3.transform()
+                                                      .translate([
+                                                        tooltip_rect.x,
+                                                        tooltip_rect.y]);
+                                    if(d3.event && opts.zoom_opts &&
+                                       opts.zoom_opts.geometric) {
+                                        transform.scale = d3.event.scale;
                                     }
-                                    return transform_str;
+                                    return transform.toString();
                                 }
                             })
                      .transition()
                      .duration(250)
                      .attr({
-                            opacity: 1,
+                            opacity: 1
                            });
-        }
-        d3po.dispatch.on("mouseover.tooltip",update_tooltip);
+        };
 
-        var hide_tooltip = function() {
+        d3po.dispatch.on("mouseover."+opts.name+".tooltip",update_tooltip);
 
-            var pt = d3.select(this);
-            var pt_transform = d3.transform(pt.attr("transform"));
+        hide_tooltip = function() {
+
+            var pt = d3.select(this),
+                pt_transform = d3.transform(pt.attr("transform"));
             pt_transform.scale = [1,1];
             pt.transition()
               .duration(300)
@@ -510,57 +661,82 @@ d3po.chart = function(opts) {
                            });
             tooltip_g.selectAll("rect").transition().duration(250).remove();
             tooltip_g.selectAll("text").transition().duration(250).remove();
-        }
-        d3po.dispatch.on("mouseout.tooltip",hide_tooltip);
+        };
+        d3po.dispatch.on("mouseout."+opts.name+".tooltip",hide_tooltip);
 
-    }
+    };
+
+    hotkeys = function() {
+
+        window.focus();
+        d3.select(window).on("keydown", function() {
+                    console.log(d3po.curr_chart.opts.name);
+                    console.log(d3po.curr_chart.data_xlim);
+                    console.log(d3po.curr_chart.tooltips);
+                    console.log(d3.event.keyCode);
+                 });
+
+    };
 
     // set everything up
     init = function() {
 
+        var svg,
+            defs,
+            chart_width, chart_height,
+            chartarea,
+            padding,
+            update_viewport;
+
         // initialize all unset options
-        opts = {
+        chart_opts = {
             width: opts.width || 600,
             height: opts.height || 600,
-            margin: opts.margin || {top: 40, right:40, bottom: 40, left:40}, // margin around charting area in pixels
-            target: opts.target || 'body', // target html element to append svg to
+            margin: opts.margin || {top: 40, right:40, bottom: 40, left:40},
+            target: opts.target || 'body',
             name: opts.name || 'chart_'+d3po.chartcount,
             xlim: opts.xlim || [0,1],
             ylim: opts.ylim || [0,1],
             background: opts.background || "#eee",
             axis: opts.axis == false ? opts.axis : true,
             axis_opts: opts.axis_opts || {},
+            padding: opts.padding || "normal",
             grid: opts.grid == false ? opts.grid : true,
             grid_opts: opts.grid_opts || {},
             zoom: opts.zoom == false ? opts.zoom : true,
             zoom_opts: opts.zoom_opts || {},
             tooltips: opts.tooltips == false ? opts.tooltips : true,
-            tooltips_opts: opts.tooltips_opts || {}
-        }
+            tooltips_opts: opts.tooltips_opts || {},
+            hotkeys: opts.hotkeys == false ? opts.hotkeys : true
+        };
 
         // increment the global chartcount so multiple charts don't
         // clobber each other
         d3po.chartcount += 1;
 
         // insert the svg
-        var svg = d3.select(opts.target)
-                    .append('svg');
+        svg = d3.select(chart_opts.target)
+                .append('svg');
         svg.attr({
-                   width: opts.width,
-                   height: opts.height,
-                   id: opts.name
+                   width: chart_opts.width,
+                   height: chart_opts.height,
+                   id: chart_opts.name
             });
 
         // add some defs
-        var defs = svg.append("defs");
+        defs = svg.append("defs");
 
         // chart area
-        var chart_width = opts.width - opts.margin.left - opts.margin.right;
-        var chart_height = opts.height - opts.margin.top - opts.margin.bottom;
+        chart_width = chart_opts.width -
+                      chart_opts.margin.left -
+                      chart_opts.margin.right;
+        chart_height = chart_opts.height -
+                       chart_opts.margin.top -
+                       chart_opts.margin.bottom;
 
         // this clips drawn objects to only appear in chartarea boundaries
         defs.append("clipPath")
-            .attr({id:"chartarea_clip"})
+            .attr({id:"chartarea_clip_"+chart_opts.name})
             .append("rect")
             .attr({
                    x:0,
@@ -571,22 +747,27 @@ d3po.chart = function(opts) {
 
         svg.append("rect")
                  .attr({
-                        x: opts.margin.left,
-                        y: opts.margin.top,
+                        x: chart_opts.margin.left,
+                        y: chart_opts.margin.top,
                         width: chart_width,
                         height: chart_height
                   })
                  .style({
-                        fill: opts.background
+                        fill: chart_opts.background
                   });
 
-
-        var chartarea = svg.append("g")
-                           .attr({
-                                id: "chartarea",
-                                "clip-path":"url(#chartarea_clip)",
-                                transform: d3po.util.translate([opts.margin.left,opts.margin.top])
-                            });
+        chartarea = svg.append("g")
+                       .attr({
+                            id: "chartarea",
+                            "clip-path":"url(#chartarea_clip_" +
+                                            chart_opts.name+")",
+                            transform: d3.transform()
+                                         .translate([
+                                            chart_opts.margin.left,
+                                            chart_opts.margin.top
+                                           ])
+                                         .toString()
+                        });
 
         // add an invisible rect so the zoom element works properly
         chartarea.append("rect")
@@ -596,48 +777,81 @@ d3po.chart = function(opts) {
                         opacity: 0
                   });
 
+        // padding adds space around data limits
+        switch(chart_opts.padding) {
+        case "none":
+            padding = 0;
+            break;
+        case "tight":
+            padding = 0.01;
+            break;
+        default:
+            padding = 0.05;
+        }
 
         // initialize some objects that will be used later
-        chartdata = {
+        chart_data = {
             chart_width: chart_width,
             chart_height: chart_height,
             xscale: d3.scale.linear().domain([0,1]).range([0,chart_width]),
             yscale: d3.scale.linear().domain([0,1]).range([chart_height,0]),
-            xlim: opts.xlim,
-            ylim: opts.ylim,
+            xlim: chart_opts.xlim,
+            ylim: chart_opts.ylim,
             data_xlim: [0,1],
             data_ylim: [0,1],
+            padding: padding,
             svg: svg,
             chartarea: chartarea,
-            counter: d3po.counter()
-        }
+            counter: d3po.counter(),
+            chart_opts:chart_opts
+        };
 
         // set viewport to data on reset
         update_viewport = function() {
 
-            chartdata.xscale.domain(chartdata.data_xlim.map(function(d) { return d*1.2; }));
-            chartdata.yscale.domain(chartdata.data_ylim.map(function(d) { return d*1.2; }));
+            var data_width = chart_data.data_xlim[1]-chart_data.data_xlim[0],
+                data_height = chart_data.data_ylim[1]-chart_data.data_ylim[0];
 
-            
-            if(chartdata.zoom) {
-                chartdata.zoom
-                         .x(chartdata.xscale)
-                         .y(chartdata.yscale);
+            chart_data.xscale.domain([chart_data.data_xlim[0] -
+                                      chart_data.padding*data_width,
+                                      chart_data.data_xlim[1] +
+                                      chart_data.padding*data_width
+                                    ]);
+            chart_data.yscale.domain([chart_data.data_ylim[0] -
+                                      chart_data.padding*data_height,
+                                      chart_data.data_ylim[1] +
+                                      chart_data.padding*data_height
+                                    ]);
+
+            if(chart_data.zoom) {
+                chart_data.zoom
+                         .x(chart_data.xscale)
+                         .y(chart_data.yscale);
             }
-            chartdata.xAxis && chartdata.svg.select('.x.axis').call(chartdata.xAxis);
-            chartdata.yAxis && chartdata.svg.select('.y.axis').call(chartdata.yAxis);
+            if(chart_data.xAxis) {
+                chart_data.svg.select('.x.axis').call(chart_data.xAxis);
+            }
+            if(chart_data.yAxis) {
+                chart_data.svg.select('.y.axis').call(chart_data.yAxis);
+            }
 
             d3po.dispatch.update();
-        }
-        d3po.dispatch.on("reset",update_viewport);
+        };
+        d3po.dispatch.on("reset."+chart_opts.name,update_viewport);
 
+        svg.on({
+            "mouseover": function() { d3po.curr_chart = chart_data; }
+            });
         // add stuff unless asked not to
-        opts.axis && axis(opts.axis_opts);
-        opts.grid && grid(opts.grid_opts);
-        opts.zoom && zoom(opts.zoom_opts);
-        opts.tooltips && tooltips(opts.tooltip_opts);
+        chart_opts.axis && axis(chart_opts.axis_chart_opts);
+        chart_opts.grid && grid(chart_opts.grid_chart_opts);
+        chart_opts.zoom && zoom(chart_opts.zoom_chart_opts);
+        console.log(chart_opts.tooltips);
+        chart_opts.tooltips && tooltips(chart_opts.tooltip_chart_opts);
+        chart_opts.hotkeys && hotkeys();
 
-    }
+    };
+
     init();
 
     return {lines:lines,
@@ -645,5 +859,5 @@ d3po.chart = function(opts) {
             boxes:boxes,
             bars:bars,
             axis:axis
-           }
-}
+           };
+};
