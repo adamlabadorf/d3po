@@ -48,7 +48,7 @@ d3po.randomScatter = function() { //# groups,# points per group
                     y: random(), 
                     size: Math.random(), 
                     shape: shapes[i%shapes.length],
-                    color: colors[i%colors.length],
+                    fill: colors[i%colors.length],
                     alpha: Math.min(1,0.5+Math.random())
                 });
     }
@@ -246,9 +246,8 @@ d3po.chart = function(opts) {
             points, update_points;
 
         sopts = {
-                   //scale_mode: sopts.scale_mode || "median"
+                   scale_mode: sopts.scale_mode || "median"
                 };
-        sopts.scale_mode = "median";
 
         // create a d3.scale that converts the datapoint sizes
         // appropriately
@@ -297,13 +296,17 @@ d3po.chart = function(opts) {
                             var transf = {};
                             transf.translate = [chart_data.xscale(d.x),
                                                 chart_data.yscale(d.y)];
-                            if(d3.event && chart_opts.zoom_opts &&
+                            if(d3.event && d3.event.scale &&
+                               chart_opts.zoom_opts &&
                                chart_opts.zoom_opts.geometric) {
                                 transf.scale = d3.event.scale;
                             }
+                            console.log(d3po.util.transform(transf,this));
                             return d3po.util.transform(transf,this);
-                        },
-                        fill: function(d) { return d.color || 'blue'; },
+                        }
+                      })
+                      .style({
+                        fill: function(d) { return d.fill || 'blue'; },
                         "fill-opacity": function(d) { return d.alpha; }
                      });
 
@@ -559,24 +562,37 @@ d3po.chart = function(opts) {
                     visibility: "visible",
                     opacity: 0 
                   });
-            
+
         update_tooltip = function(d) {
 
-            if(!chart_opts.tooltips) {
-                return;
-            }
+            var tooltip_rect,
+                path = d3.select(this);
 
-            var tooltip_rect;
+            // animate stroke on mouseover
+            path.attr({
+                     "stroke-dasharray": "10,2",
+                    })
+              .style("stroke",function(d) { return d.stroke || "#9696ff"; })
+              .append("animate")
+              .attr({
+                     attributeName:"stroke-dashoffset",
+                     begin:"0s",
+                     from:0,
+                     to:100,
+                     dur:"10s",
+                     repeatCount:"indefinite"
+                    });
 
-            d3.select(this)
-              .transition()
-              .duration(300)
-              .ease("bounce")
-              .attr("transform",d3po.util.transform({
-                    scale: [2,2]
-                   },
-                   this)
-               );
+            path.append("animate")
+                .attr({
+                     attributeName:"stroke-width",
+                     begin:"0s",
+                     from: "1px",
+                     to: "3px",
+                     dur:"1s",
+                     restart: "always",
+                     fill: "freeze"
+                    });
 
             tooltip_g.selectAll("text")
                      .data(d3.entries(d))
@@ -628,15 +644,16 @@ d3po.chart = function(opts) {
                                 var transf = {};
                                 transf.translate = [tooltip_rect.x,
                                                     tooltip_rect.y];
-                                if(d3.event && chart_opts.zoom_opts &&
+                                console.log(d3.event);
+                                if(d3.event && d3.event.scale &&
+                                   chart_opts.zoom_opts &&
                                    chart_opts.zoom_opts.geometric) {
                                     transf.scale = d3.event.scale;
                                 }
-                                return d3po.util.transform(transf);
+                                console.log(transf);
+                                return d3po.util.transform(transf,this);
                             }
                           })
-                     .transition()
-                     .duration(250)
                      .attr({
                             opacity: 1
                            });
@@ -647,27 +664,27 @@ d3po.chart = function(opts) {
 
         hide_tooltip = function() {
 
-            console.log(d3.select(this).attr('transform'));
-
-            var transf = {};
-            transf.scale = 1;
-            if(d3.event && chart_opts.zoom_opts &&
-               chart_opts.zoom_opts.geometric) {
-                transf.scale = d3.event.scale;
-            }
+            // remove the animated stroke
             d3.select(this)
-              .transition()
-              .duration(100)
-              .ease("bounce")
-              .attr("transform",d3po.util.transform(transf,this));
+              .attr({
+                     "stroke-dasharray": null
+                    })
+               .style({
+                   fill: function(d) { return d.fill || 'blue'; },
+                   stroke: function(d) { return d.stroke || 'none'; },
+                   "stroke-width" : "1px",
+                   "fill-opacity": function(d) { return d.alpha; }
+               });
 
-            tooltip_g.transition()
-                     .duration(250)
-                     .attr({
+            d3.select(this)
+              .selectAll("animate")
+              .remove();
+
+            tooltip_g.attr({
                             opacity: 0
                            });
-            tooltip_g.selectAll("rect").transition().duration(250).remove();
-            tooltip_g.selectAll("text").transition().duration(250).remove();
+            tooltip_g.selectAll("text").remove();
+            tooltip_g.selectAll("rect").remove();
         };
         chart_data.dispatch.on("mouseout."+chart_opts.name+".tooltip",
                          hide_tooltip);
@@ -678,10 +695,22 @@ d3po.chart = function(opts) {
 
         window.focus();
         d3.select(window).on("keydown", function() {
+                    var chart_data = d3po.curr_chart.chart_data,
+                        chart_opts = d3po.curr_chart.chart_opts;
+
                     console.log(chart_opts.name);
                     console.log(chart_data.data_xlim);
                     console.log(chart_opts.tooltips);
                     console.log(d3.event.keyCode);
+
+                    switch (d3.event.keyCode) {
+                        case 67: // c, clear
+                            chart_data.dispatch.reset();
+                            break;
+                        case 191: // ?, help
+                            console.log("help yourself");
+                            break;
+                    }
                  });
 
     };
@@ -850,13 +879,13 @@ d3po.chart = function(opts) {
         // on mouseover
         svg.on({
             "mouseover": function() {
-                d3po.curr_chart = {chart_data:chart_data,chat_opts:chart_opts};
+                d3po.curr_chart = {chart_data:chart_data,chart_opts:chart_opts};
               }
             });
         // add stuff unless asked not to
-        chart_opts.axis && axis(chart_opts.axis_chart_opts);
-        chart_opts.grid && grid(chart_opts.grid_chart_opts);
-        chart_opts.zoom && zoom(chart_opts.zoom_chart_opts);
+        chart_opts.axis && axis(chart_opts.axis_opts);
+        chart_opts.grid && grid(chart_opts.grid_opts);
+        chart_opts.zoom && zoom(chart_opts.zoom_opts);
         chart_opts.tooltips && tooltips(chart_opts.tooltip_chart_opts);
         chart_opts.hotkeys && hotkeys();
 
