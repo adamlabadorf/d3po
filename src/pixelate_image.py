@@ -25,7 +25,7 @@ pixel_mona_d = []
 for i,x in enumerate(arange(0,h,box_width)) :
     for j,y in enumerate(arange(0,w,box_width)) :
         pixel_mona[i,j] = mona[x:x+box_width,y:y+box_width].mean()
-        pixel_mona_d.append({"x":i,"y":j,"v":pixel_mona[i,j]})
+        pixel_mona_d.append({"x":j,"y":i,"v":pixel_mona[i,j]})
 
 imshow(pixel_mona,cmap=cm.gray,interpolation='none')
 show()
