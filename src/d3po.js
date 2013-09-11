@@ -162,6 +162,7 @@ d3po.chart = function(opts) {
         lines,
         scatter,
         boxes,
+        heatmap,
         bars,
         axis,
         grid,
@@ -301,7 +302,6 @@ d3po.chart = function(opts) {
                                chart_opts.zoom_opts.geometric) {
                                 transf.scale = d3.event.scale;
                             }
-                            console.log(d3po.util.transform(transf,this));
                             return d3po.util.transform(transf,this);
                         }
                       })
@@ -411,6 +411,30 @@ d3po.chart = function(opts) {
         chart_data.dispatch.update();
         chart_data.dispatch.reset();
 
+    };
+
+    heatmap = function(data) {
+        var colormap = d3.interpolateRgb('black','white'),
+            color_scale,
+            y_extents,
+            data_extents,
+            new_data;
+
+        y_extents = d3.extent(data,function(d) { return d.y; });
+        data_extents = d3.extent(data,function(d) { return d.v; });
+        color_scale = d3.scale.linear()
+                        .range([0,1])
+                        .domain(data_extents);
+
+        new_data = data.map(function(d) {
+            d.y = y_extents[1]-d.y+y_extents[0];
+            d.fill = colormap(color_scale(d.v));
+            d.w = 1;
+            d.h = 1;
+            return d;
+        })
+
+        boxes(new_data);
     };
 
     bars = function() {
@@ -644,13 +668,11 @@ d3po.chart = function(opts) {
                                 var transf = {};
                                 transf.translate = [tooltip_rect.x,
                                                     tooltip_rect.y];
-                                console.log(d3.event);
                                 if(d3.event && d3.event.scale &&
                                    chart_opts.zoom_opts &&
                                    chart_opts.zoom_opts.geometric) {
                                     transf.scale = d3.event.scale;
                                 }
-                                console.log(transf);
                                 return d3po.util.transform(transf,this);
                             }
                           })
@@ -698,9 +720,6 @@ d3po.chart = function(opts) {
                     var chart_data = d3po.curr_chart.chart_data,
                         chart_opts = d3po.curr_chart.chart_opts;
 
-                    console.log(chart_opts.name);
-                    console.log(chart_data.data_xlim);
-                    console.log(chart_opts.tooltips);
                     console.log(d3.event.keyCode);
 
                     switch (d3.event.keyCode) {
@@ -896,6 +915,7 @@ d3po.chart = function(opts) {
     return {lines:lines,
             scatter:scatter,
             boxes:boxes,
+            heatmap:heatmap,
             bars:bars,
             axis:axis,
             chart_data: chart_data,

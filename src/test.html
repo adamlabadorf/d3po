@@ -6,9 +6,9 @@
         <script type="text/javascript" src="d3po.js" ></script>
     </head>
     <body>
-    <div id="boxes">
-    </div>
     <div id="scatterline">
+    </div>
+    <div id="boxes">
     </div>
     <div id="mona">
     </div>
@@ -29,8 +29,6 @@
                                                }
                                    });
 
-            test_data = d3po.randomScatter();
-            chart.scatter(test_data);
             test_line = d3po.randomLine();
             chart.lines(test_line,
                         {
@@ -38,33 +36,33 @@
                             extend_edges:true
                         });
             chart.scatter(test_line);
+            test_data = d3po.randomScatter();
+            chart.scatter(test_data);
 
             chart = d3po.chart({
                                     target: "#boxes",
                                     width: 800,
                                     tooltips: true,
-                                    padding: "tight", // | "tight" | "normal"
+                                    padding: "tight", // "none" | "tight" | "normal"
                                     zoom_opts: {
                                                 geometric:false
                                                 }
                                     });
             test_boxes = d3po.randomBoxGrid();
-            console.log(test_boxes);
             chart.boxes(test_boxes,{anchor:"center"});
 
-            d3.json("http://adamlabadorf.github.io/share/pixel_mona.json",
+            d3.json("pixel_mona.json",
                     function(data) {
-
-                        console.log(data);
 
                         var chart = d3po.chart({
                             target: "#mona",
-                            width:250,
-                            height:373,
+                            width:500,
+                            height:746,
+                            padding: "none",
                             zoom:true,
-                            axis:false
+                            axis:true
                             });
-                        chart.boxes(data,
+                        chart.heatmap(data,
                                     {anchor: "center"}
                                    );
 
