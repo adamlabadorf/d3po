@@ -16,11 +16,15 @@ if($) { $(d3po.css).appendTo("head"); }
 
 window.d3po = d3po;
 
-d3po.dispatch = d3.dispatch("update","reset","mouseover","mouseout");
 d3po.util = {
-    translate: function(l) {
+    transform: function(transf,elem) {
         "use strict";
-        return "translate("+l.join(',')+")";
+        var trans = d3.transform(elem?d3.select(elem).attr("transform"):null),
+            k;
+        for(k in transf) {
+            trans[k] = transf[k];
+        }
+        return trans.toString();
     }
 };
 
@@ -116,7 +120,7 @@ d3po.randomBoxGrid = function() {
                         fill: colors[i%colors.length],
                         stroke: colors[(i+3)%colors.length],
                         alpha: Math.min(1,0.5+Math.random())
-                        });
+                       });
 
         }
     }
@@ -153,7 +157,7 @@ d3po.counter = function() {
 d3po.chart = function(opts) {
     "use strict";
 
-    var chart_opts = opts || {},
+    var chart_opts = {},
         chart_data = {},
         lines,
         scatter,
@@ -229,9 +233,9 @@ d3po.chart = function(opts) {
                 fill: "none"
                });
        };
-       d3po.dispatch.on("update."+opts.name+"."+id,update_lines);
-       d3po.dispatch.update();
-       d3po.dispatch.reset();
+       chart_data.dispatch.on("update."+chart_opts.name+"."+id,update_lines);
+       chart_data.dispatch.update();
+       chart_data.dispatch.reset();
     };
 
     scatter = function(data,scatter_opts) {
@@ -277,11 +281,12 @@ d3po.chart = function(opts) {
         points.enter()
               .append("path")
               .on({
-                    mouseover:d3po.dispatch.mouseover,
-                    mouseout:d3po.dispatch.mouseout
+                    mouseover:chart_data.dispatch.mouseover,
+                    mouseout:chart_data.dispatch.mouseout
                   });
 
         update_points = function() {
+
               points.attr({
                         d: function(d) {
                             return d3.svg.symbol()
@@ -289,25 +294,23 @@ d3po.chart = function(opts) {
                                          .size(size_scale(d.size || 30))();
                         },
                         transform: function(d) {
-                            var trnsf = d3.transform(d3.select(this)
-                                                       .attr('transform')
-                                                    );
-                            trnsf.translate = [chart_data.xscale(d.x),
-                                               chart_data.yscale(d.y)];
-                            if(d3.event && opts.zoom_opts &&
-                               opts.zoom_opts.geometric) {
-                                trnsf.scale = d3.event.scale;
+                            var transf = {};
+                            transf.translate = [chart_data.xscale(d.x),
+                                                chart_data.yscale(d.y)];
+                            if(d3.event && chart_opts.zoom_opts &&
+                               chart_opts.zoom_opts.geometric) {
+                                transf.scale = d3.event.scale;
                             }
-                            return trnsf.toString();
+                            return d3po.util.transform(transf,this);
                         },
                         fill: function(d) { return d.color || 'blue'; },
                         "fill-opacity": function(d) { return d.alpha; }
                      });
 
         };
-        d3po.dispatch.on("update."+opts.name+"."+id,update_points);
-        d3po.dispatch.update();
-        d3po.dispatch.reset();
+        chart_data.dispatch.on("update."+id,update_points);
+        chart_data.dispatch.update();
+        chart_data.dispatch.reset();
 
     };
 
@@ -332,8 +335,8 @@ d3po.chart = function(opts) {
         box_g.enter()
               .append("rect")
               .on({
-                    mouseover:d3po.dispatch.mouseover,
-                    mouseout:d3po.dispatch.mouseout
+                    mouseover:chart_data.dispatch.mouseover,
+                    mouseout:chart_data.dispatch.mouseout
                   });
 
         get_dims = function(d) {
@@ -378,20 +381,19 @@ d3po.chart = function(opts) {
                         width: function(d) { return get_dims(d)[0]; },
                         height: function(d) { return  get_dims(d)[1]; },
                         transform: function(d) {
-                            var transform = d3.transform(d3.select(this)
-                                                           .attr("transform")),
+                            var transf = {},
                                 dims = get_dims(d);
                             if(bopts.anchor == "center") {
-                                transform.translate =
+                                transf.translate =
                                         [chart_data.xscale(d.x)-dims[0]/2,
                                          chart_data.yscale(d.y)-dims[1]/2];
                             }
                             else {
-                                transform.translate =
+                                transf.translate =
                                         [chart_data.xscale(d.x),
                                          chart_data.yscale(d.y)-dims[1]];
                             }
-                            return transform.toString();
+                            return d3po.util.transform(transf,this);
                         }
 
                     })
@@ -402,9 +404,9 @@ d3po.chart = function(opts) {
                      });
 
         };
-        d3po.dispatch.on("update."+opts.name+"."+id,update_boxes);
-        d3po.dispatch.update();
-        d3po.dispatch.reset();
+        chart_data.dispatch.on("update."+id,update_boxes);
+        chart_data.dispatch.update();
+        chart_data.dispatch.reset();
 
     };
 
@@ -414,7 +416,7 @@ d3po.chart = function(opts) {
 
     axis = function(axis_opts) {
         var aopts = axis_opts || {},
-            xAxis, yAxis, axis_transform,
+            xAxis, yAxis,
             xAxis_g, yAxis_g;
 
         aopts = {
@@ -437,30 +439,32 @@ d3po.chart = function(opts) {
                   .tickSize(-chart_data.chart_width);
 
         // add the x and y axes to the svg
-        axis_transform = d3.transform()
-                           .translate([
-                                   opts.margin.left,
-                                   (opts.margin.top+chart_data.chart_height)
-                                  ]);
         xAxis_g = chart_data.svg
-                        .insert("g","#chartarea")
-                        .attr({
-                            "transform":axis_transform.toString(),
-                            "class":"x axis"
-                         })
-                        .call(xAxis);
+                  .insert("g","#chartarea")
+                  .attr({
+                      "transform":d3po.util.transform({
+                              translate: [
+                                chart_opts.margin.left,
+                               (chart_opts.margin.top +
+                                chart_data.chart_height)
+                              ]
+                          },
+                          this),
+                      "class":"x axis"
+                   })
+                  .call(xAxis);
 
         yAxis_g = chart_data.svg
-                .insert("g","#chartarea")
-                .attr({
-                    "class": "y axis",
-                    transform: d3.transform()
-                                 .translate([opts.margin.left,
-                                             opts.margin.top]
-                                           )
-                                 .toString()
-                 })
-                .call(yAxis);
+                   .insert("g","#chartarea")
+                   .attr({
+                        "class": "y axis",
+                        "transform":d3po.util.transform({
+                            translate: [chart_opts.margin.left,
+                                        chart_opts.margin.top]
+                         },
+                         this)
+                    })
+                   .call(yAxis);
 
         // add x and y labels if set
         if(aopts.xLabel) {
@@ -468,10 +472,10 @@ d3po.chart = function(opts) {
                    .attr({
                           "class": "x label",
                           "text-anchor": "middle",
-                          transform: d3.transform()
-                                       .translate([chart_data.chart_width/2,
-                                                   25])
-                                       .toString()
+                          transform :d3po.util.transform({
+                               translate: [chart_data.chart_width/2, 25]
+                           },
+                           this)
                          })
                    .text(aopts.xLabel);
         }
@@ -480,12 +484,11 @@ d3po.chart = function(opts) {
                    .attr({
                           "class": "x label",
                           "text-anchor": "middle",
-                          transform: d3.transform()
-                                       .translate([
-                                            -25,
-                                            chart_data.chart_height/2])
-                                       .rotate(-90)
-                                       .toString()
+                          transform :d3po.util.transform({
+                               translate: [-25,chart_data.chart_height/2],
+                               rotate: -90
+                           },
+                           this)
                          })
                    .text(aopts.yLabel);
         }
@@ -516,15 +519,13 @@ d3po.chart = function(opts) {
                      geometric: zopts.geometric || false
                     };
 
-        opts.zopts = zopts;
-
         // zoom is currently only implemented when axis is on
-        if(opts.axis) {
-            opts.zoom = true;
+        if(chart_opts.axis) {
+            chart_opts.zoom_opts = zopts;
             zoomed = function() {
                 chart_data.svg.select(".x.axis").call(chart_data.xAxis);
                 chart_data.svg.select(".y.axis").call(chart_data.yAxis);
-                d3po.dispatch.update();
+                chart_data.dispatch.update();
             };
             z = d3.behavior.zoom()
                       .x(chart_data.xscale)
@@ -547,9 +548,8 @@ d3po.chart = function(opts) {
             hide_tooltip;
 
         topts = {
-                        offset: topts.offset == undefined ?
-                                    10 : topts.offset
-                       };
+                 offset: topts.offset == undefined ?  10 : topts.offset
+                };
 
         id = "tooltip";
         tooltip_g = chart_data.svg
@@ -562,18 +562,21 @@ d3po.chart = function(opts) {
             
         update_tooltip = function(d) {
 
-            var pt,
-                pt_transform,
-                tooltip_rect;
+            if(!chart_opts.tooltips) {
+                return;
+            }
 
-            pt = d3.select(this);
-            pt_transform = d3.transform(pt.attr("transform"));
+            var tooltip_rect;
 
-            pt_transform.scale = [2,2];
-            pt.transition()
+            d3.select(this)
+              .transition()
               .duration(300)
               .ease("bounce")
-              .attr("transform",pt_transform.toString());
+              .attr("transform",d3po.util.transform({
+                    scale: [2,2]
+                   },
+                   this)
+               );
 
             tooltip_g.selectAll("text")
                      .data(d3.entries(d))
@@ -601,39 +604,37 @@ d3po.chart = function(opts) {
                       });
 
             // figure out where to put the tooltip
-
             tooltip_rect.x = chart_data.xscale(d.x)+
-                             opts.margin.left+
+                             chart_opts.margin.left+
                              topts.offset;
 
             tooltip_rect.y = chart_data.yscale(d.y)+
-                             opts.margin.top+
+                             chart_opts.margin.top+
                              topts.offset;
 
-            if(tooltip_rect.x+tooltip_rect.width > opts.width) {
+            if(tooltip_rect.x+tooltip_rect.width > chart_opts.width) {
                 tooltip_rect.x = chart_data.xscale(d.x)+
-                                 opts.margin.left-
+                                 chart_opts.margin.left-
                                  tooltip_rect.width-topts.offset;
             }
-            if(tooltip_rect.y+tooltip_rect.height > opts.height) {
+            if(tooltip_rect.y+tooltip_rect.height > chart_opts.height) {
                 tooltip_rect.y = chart_data.yscale(d.y) +
-                                 opts.margin.top -
+                                 chart_opts.margin.top -
                                  tooltip_rect.height -
                                  topts.offset;
             }
             tooltip_g.attr({
                             transform: function() {
-                                    var transform = d3.transform()
-                                                      .translate([
-                                                        tooltip_rect.x,
-                                                        tooltip_rect.y]);
-                                    if(d3.event && opts.zoom_opts &&
-                                       opts.zoom_opts.geometric) {
-                                        transform.scale = d3.event.scale;
-                                    }
-                                    return transform.toString();
+                                var transf = {};
+                                transf.translate = [tooltip_rect.x,
+                                                    tooltip_rect.y];
+                                if(d3.event && chart_opts.zoom_opts &&
+                                   chart_opts.zoom_opts.geometric) {
+                                    transf.scale = d3.event.scale;
                                 }
-                            })
+                                return d3po.util.transform(transf);
+                            }
+                          })
                      .transition()
                      .duration(250)
                      .attr({
@@ -641,18 +642,24 @@ d3po.chart = function(opts) {
                            });
         };
 
-        d3po.dispatch.on("mouseover."+opts.name+".tooltip",update_tooltip);
+        chart_data.dispatch.on("mouseover."+chart_opts.name+".tooltip",
+                         update_tooltip);
 
         hide_tooltip = function() {
 
-            var pt = d3.select(this),
-                pt_transform = d3.transform(pt.attr("transform"));
-            pt_transform.scale = [1,1];
-            pt.transition()
-              .duration(300)
-              .ease("bounce")
-              .attr("transform",pt_transform.toString());
+            console.log(d3.select(this).attr('transform'));
 
+            var transf = {};
+            transf.scale = 1;
+            if(d3.event && chart_opts.zoom_opts &&
+               chart_opts.zoom_opts.geometric) {
+                transf.scale = d3.event.scale;
+            }
+            d3.select(this)
+              .transition()
+              .duration(100)
+              .ease("bounce")
+              .attr("transform",d3po.util.transform(transf,this));
 
             tooltip_g.transition()
                      .duration(250)
@@ -662,7 +669,8 @@ d3po.chart = function(opts) {
             tooltip_g.selectAll("rect").transition().duration(250).remove();
             tooltip_g.selectAll("text").transition().duration(250).remove();
         };
-        d3po.dispatch.on("mouseout."+opts.name+".tooltip",hide_tooltip);
+        chart_data.dispatch.on("mouseout."+chart_opts.name+".tooltip",
+                         hide_tooltip);
 
     };
 
@@ -670,9 +678,9 @@ d3po.chart = function(opts) {
 
         window.focus();
         d3.select(window).on("keydown", function() {
-                    console.log(d3po.curr_chart.opts.name);
-                    console.log(d3po.curr_chart.data_xlim);
-                    console.log(d3po.curr_chart.tooltips);
+                    console.log(chart_opts.name);
+                    console.log(chart_data.data_xlim);
+                    console.log(chart_opts.tooltips);
                     console.log(d3.event.keyCode);
                  });
 
@@ -684,7 +692,7 @@ d3po.chart = function(opts) {
         var svg,
             defs,
             chart_width, chart_height,
-            chartarea,
+            chartarea, this_chart,
             padding,
             update_viewport;
 
@@ -761,12 +769,10 @@ d3po.chart = function(opts) {
                             id: "chartarea",
                             "clip-path":"url(#chartarea_clip_" +
                                             chart_opts.name+")",
-                            transform: d3.transform()
-                                         .translate([
-                                            chart_opts.margin.left,
-                                            chart_opts.margin.top
-                                           ])
-                                         .toString()
+                            transform: d3po.util.transform({
+                                         translate: [chart_opts.margin.left,
+                                                     chart_opts.margin.top]
+                                        })
                         });
 
         // add an invisible rect so the zoom element works properly
@@ -789,6 +795,7 @@ d3po.chart = function(opts) {
             padding = 0.05;
         }
 
+        // we create a d3.dispatch object with events for this specific chart
         // initialize some objects that will be used later
         chart_data = {
             chart_width: chart_width,
@@ -803,7 +810,7 @@ d3po.chart = function(opts) {
             svg: svg,
             chartarea: chartarea,
             counter: d3po.counter(),
-            chart_opts:chart_opts
+            dispatch: d3.dispatch("update","reset","mouseover","mouseout")
         };
 
         // set viewport to data on reset
@@ -835,18 +842,21 @@ d3po.chart = function(opts) {
                 chart_data.svg.select('.y.axis').call(chart_data.yAxis);
             }
 
-            d3po.dispatch.update();
+            chart_data.dispatch.update();
         };
-        d3po.dispatch.on("reset."+chart_opts.name,update_viewport);
+        chart_data.dispatch.on("reset."+chart_opts.name,update_viewport);
 
+        // this changes the static variable for curr chart to this chart
+        // on mouseover
         svg.on({
-            "mouseover": function() { d3po.curr_chart = chart_data; }
+            "mouseover": function() {
+                d3po.curr_chart = {chart_data:chart_data,chat_opts:chart_opts};
+              }
             });
         // add stuff unless asked not to
         chart_opts.axis && axis(chart_opts.axis_chart_opts);
         chart_opts.grid && grid(chart_opts.grid_chart_opts);
         chart_opts.zoom && zoom(chart_opts.zoom_chart_opts);
-        console.log(chart_opts.tooltips);
         chart_opts.tooltips && tooltips(chart_opts.tooltip_chart_opts);
         chart_opts.hotkeys && hotkeys();
 
@@ -858,6 +868,8 @@ d3po.chart = function(opts) {
             scatter:scatter,
             boxes:boxes,
             bars:bars,
-            axis:axis
+            axis:axis,
+            chart_data: chart_data,
+            opts: chart_opts
            };
 };
