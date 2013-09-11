@@ -10,9 +10,12 @@
     </div>
     <div id="scatterline">
     </div>
+    <div id="mona">
+    </div>
     <script type="text/javascript">
         $(document).ready(function() {
-            var chart = d3po.chart({
+            var chart, test_data, test_line, test_boxes;
+            chart = d3po.chart({
                                     target: "#scatterline",
                                     width: 600,
                                     xlim: [-3,3],
@@ -26,9 +29,9 @@
                                                }
                                    });
 
-            var test_data = d3po.randomScatter();
+            test_data = d3po.randomScatter();
             chart.scatter(test_data);
-            var test_line = d3po.randomLine();
+            test_line = d3po.randomLine();
             chart.lines(test_line,
                         {
                             color: "green",
@@ -36,7 +39,7 @@
                         });
             chart.scatter(test_line);
 
-            var chart = d3po.chart({
+            chart = d3po.chart({
                                     target: "#boxes",
                                     width: 800,
                                     tooltips: true,
@@ -45,10 +48,28 @@
                                                 geometric:false
                                                 }
                                     });
-            var test_boxes = d3po.randomBoxGrid();
+            test_boxes = d3po.randomBoxGrid();
             console.log(test_boxes);
             chart.boxes(test_boxes,{anchor:"center"});
 
+            d3.json("http://adamlabadorf.github.io/share/pixel_mona.json",
+                    function(data) {
+
+                        console.log(data);
+
+                        var chart = d3po.chart({
+                            target: "#mona",
+                            width:250,
+                            height:373,
+                            zoom:true,
+                            axis:false
+                            });
+                        chart.boxes(data,
+                                    {anchor: "center"}
+                                   );
+
+                    }
+            )
         });
     </script>
     </body>

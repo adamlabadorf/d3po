@@ -10,6 +10,8 @@ from scipy import misc
 
 mona = misc.imread('mona_lisa.jpg')
 
+print "mona is [h,w]:",mona.shape
+
 # convert to single channel
 mona = mona.mean(axis=2)
 
