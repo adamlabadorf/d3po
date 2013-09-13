@@ -1,10 +1,9 @@
-var d3po = window.d3po || {};
-
-d3po.version = '0.1';
-d3po.chartcount = 0;
-
-// this keeps track of one chart globally for routing keystroke events etc.
-d3po.curr_chart = null;
+var d3po = window.d3po || {
+    version: '0.1',
+    chartcount: 0,
+    // this keeps track of one chart globally for routing keystroke events etc.
+    curr_chart: null
+    };
 
 d3po.css = '<style type="text/css">' +
            'svg { font: 10px sans-serif; }' +
@@ -170,6 +169,7 @@ d3po.chart = function(opts) {
         legend,
         tooltips,
         hotkeys,
+        controls,
         init;
 
     lines = function(data,line_opts) {
@@ -413,13 +413,18 @@ d3po.chart = function(opts) {
 
     };
 
-    heatmap = function(data) {
-        var colormap = d3.interpolateRgb('black','white'),
+    heatmap = function(data,heatmap_opts) {
+        var hopts = heatmap_opts || {},
+            colormap,
             color_scale,
             y_extents,
             data_extents,
             new_data;
 
+        hopts = {
+            colors: hopts.colors || ['white','#441100']
+        }
+        colormap = d3.interpolateRgb(hopts.colors[1],hopts.colors[0])
         y_extents = d3.extent(data,function(d) { return d.y; });
         data_extents = d3.extent(data,function(d) { return d.v; });
         color_scale = d3.scale.linear()
@@ -447,6 +452,7 @@ d3po.chart = function(opts) {
             xAxis_g, yAxis_g;
 
         aopts = {
+            aspect: aopts.aspect || undefined,
             xLabel: aopts.xLabel || null,
             yLabel: aopts.yLabel || null,
             tickSize: aopts.tickSize || 4
@@ -575,7 +581,9 @@ d3po.chart = function(opts) {
             hide_tooltip;
 
         topts = {
-                 offset: topts.offset == undefined ?  10 : topts.offset
+                 offset: topts.offset == undefined ?  10 : topts.offset,
+                 ignore: topts.ignore || ['fill','stroke','w','h','shape','alpha'],
+                 only: topts.only || undefined
                 };
 
         id = "tooltip";
@@ -619,7 +627,12 @@ d3po.chart = function(opts) {
                     });
 
             tooltip_g.selectAll("text")
-                     .data(d3.entries(d))
+                     .data(d3.entries(d).filter(function(v) {
+                        if(topts.only != undefined) {
+                            return topts.only.indexOf(v.key) != -1;
+                        }
+                        return topts.ignore.indexOf(v.key) == -1;
+                       }))
                      .enter()
                      .append("text")
                      .attr({
@@ -714,25 +727,18 @@ d3po.chart = function(opts) {
     };
 
     hotkeys = function() {
-
-        window.focus();
-        d3.select(window).on("keydown", function() {
-                    var chart_data = d3po.curr_chart.chart_data,
-                        chart_opts = d3po.curr_chart.chart_opts;
-
-                    console.log(d3.event.keyCode);
-
-                    switch (d3.event.keyCode) {
-                        case 67: // c, clear
-                            chart_data.dispatch.reset();
-                            break;
-                        case 191: // ?, help
-                            console.log("help yourself");
-                            break;
-                    }
-                 });
-
+        console.log('not implemented yet');
     };
+
+    controls = function() {
+
+        d3.select(chart_opts.target)
+                  .append("button")
+                  .text("Reset")
+                  .on("click",function() {
+                        chart_data.dispatch.reset();
+                    });
+    }
 
     // set everything up
     init = function() {
@@ -763,8 +769,15 @@ d3po.chart = function(opts) {
             zoom_opts: opts.zoom_opts || {},
             tooltips: opts.tooltips == false ? opts.tooltips : true,
             tooltips_opts: opts.tooltips_opts || {},
-            hotkeys: opts.hotkeys == false ? opts.hotkeys : true
+            hotkeys: opts.hotkeys == false ? opts.hotkeys : true,
+            controls: opts.contols == false ? opts.controls : true
         };
+
+        chart_opts.width = d3.select(chart_opts.target)
+                             .node()
+                             .getBoundingClientRect().width;
+        console.log(d3.select(chart_opts.target).node().getBoundingClientRect());
+        console.log(chart_opts.width);
 
         // increment the global chartcount so multiple charts don't
         // clobber each other
@@ -864,9 +877,31 @@ d3po.chart = function(opts) {
         // set viewport to data on reset
         update_viewport = function() {
 
-            var data_width = chart_data.data_xlim[1]-chart_data.data_xlim[0],
-                data_height = chart_data.data_ylim[1]-chart_data.data_ylim[0];
+            var xlim = chart_data.data_xlim,
+                ylim = chart_data.data_ylim,
+                data_width = chart_data.data_xlim[1]-chart_data.data_xlim[0],
+                data_height = chart_data.data_ylim[1]-chart_data.data_ylim[0],
+                tmp,
+                aspect = 1;
 
+            // set the aspect of the scales here if set
+            if(chart_opts.axis_opts &&
+               chart_opts.axis_opts.aspect) {
+                if(chart_opts.axis_opts.aspect == "equal") {
+                    if(data_width > data_height) {
+                        tmp = data_width*chart_opts.height/chart_opts.width;
+                        ylim[0] = ylim[0]-(tmp-data_height)/2;
+                        ylim[1] = ylim[1]+(tmp-data_height)/2;
+                        data_height = tmp;
+
+                    } else {
+                        tmp = data_height*chart_opts.width/chart_opts.height;
+                        xlim[0] = xlim[0]-(tmp-data_width)/2;
+                        xlim[1] = xlim[1]+(tmp-data_width)/2;
+                        data_width = tmp;
+                    }
+                }
+            }
             chart_data.xscale.domain([chart_data.data_xlim[0] -
                                       chart_data.padding*data_width,
                                       chart_data.data_xlim[1] +
@@ -899,14 +934,19 @@ d3po.chart = function(opts) {
         svg.on({
             "mouseover": function() {
                 d3po.curr_chart = {chart_data:chart_data,chart_opts:chart_opts};
+              },
+            "click": function() {
+                d3po.curr_chart = {chart_data:chart_data,chart_opts:chart_opts};
               }
+
             });
         // add stuff unless asked not to
         chart_opts.axis && axis(chart_opts.axis_opts);
         chart_opts.grid && grid(chart_opts.grid_opts);
         chart_opts.zoom && zoom(chart_opts.zoom_opts);
-        chart_opts.tooltips && tooltips(chart_opts.tooltip_chart_opts);
+        chart_opts.tooltips && tooltips(chart_opts.tooltip_opts);
         chart_opts.hotkeys && hotkeys();
+        chart_opts.controls && controls();
 
     };
 
@@ -919,6 +959,7 @@ d3po.chart = function(opts) {
             bars:bars,
             axis:axis,
             chart_data: chart_data,
-            opts: chart_opts
+            opts: chart_opts,
+            init:init
            };
 };
