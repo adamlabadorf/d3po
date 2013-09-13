@@ -1,4 +1,6 @@
 import json
+import math
+import os
 
 from matplotlib.pyplot import imshow, show
 from matplotlib import cm
@@ -8,26 +10,36 @@ from numpy import arange, zeros
 from scipy import ndimage
 from scipy import misc
 
-mona = misc.imread('mona_lisa.jpg')
 
-print "mona is [h,w]:",mona.shape
 
-# convert to single channel
-mona = mona.mean(axis=2)
+def pixelate_image(img_fn,bins=20) :
 
-h,w = mona.shape
-bins = 20
-box_width = w/bins
-h_bins = h/box_width
-pixel_mona = zeros(shape=(h_bins+1,bins+1))
+    img = misc.imread(img_fn)
 
-pixel_mona_d = []
-for i,x in enumerate(arange(0,h,box_width)) :
-    for j,y in enumerate(arange(0,w,box_width)) :
-        pixel_mona[i,j] = mona[x:x+box_width,y:y+box_width].mean()
-        pixel_mona_d.append({"x":j,"y":i,"v":pixel_mona[i,j]})
+    print "img is [h,w]:",img.shape
 
-imshow(pixel_mona,cmap=cm.gray,interpolation='none')
-show()
+    # convert to single channel
+    img = img.mean(axis=2)
 
-json.dump(pixel_mona_d,open('pixel_mona.json','w'))
+    h,w = img.shape
+    box_width = 1.*w/bins
+    h_bins = math.ceil(1.*h/box_width)
+    pixel_img = zeros(shape=(h_bins,bins))
+    print "binned to",pixel_img.shape,"by",bins,"columns, box width",box_width
+
+    pixel_img_d = []
+    for i,x in enumerate(arange(0,h,box_width)) :
+        for j,y in enumerate(arange(0,w,box_width)) :
+            pixel_img[i,j] = img[x:x+box_width,y:y+box_width].mean()
+            pixel_img_d.append({"x":j,"y":i,"v":pixel_img[i,j]})
+
+    imshow(pixel_img,cmap=cm.gray,interpolation='none')
+    show()
+
+    base,ext = os.path.splitext(img_fn)
+    json.dump(pixel_img_d,open('%s.json'%base,'w'))
+
+if __name__ == '__main__' :
+
+    pixelate_image('mona_lisa.jpg')
+    pixelate_image('C-3PO_droid.jpg',bins=50)
