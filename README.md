@@ -17,7 +17,6 @@ with helpful interactivity.
 
 [Examples](http://adamlabadorf.github.io/src/d3po/src/test.html)
 
-<iframe src="http://adamlabadorf.github.io/src/d3po/src/d3po.html"></iframe>
 
 d3pyo
 -----
