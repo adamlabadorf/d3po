@@ -24,6 +24,7 @@ Example:
 <script type="text/javascript" src="http://adamlabadorf.github.io/lib/d3po.js" ></script>
 <script type="text/javascript">
 $(document).ready(function() {
+    console.log('huh?');
     d3.json("http://adamlabadorf.github.io/lib/C-3PO_droid.json",
             function(data) {
                 var chart = d3po.chart({
