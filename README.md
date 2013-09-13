@@ -19,7 +19,6 @@ Example:
 
 <div id="heatmap">
 </div>
-
 <script type="text/javascript" src="http://code.jquery.com/jquery-2.0.3.min.js" ></script>
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <script type="text/javascript" src="http://adamlabadorf.github.io/lib/d3po.js" ></script>
