@@ -24,22 +24,20 @@ Example:
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <script type="text/javascript" src="d3po.js" ></script>
 d3.json("http://adamlabadorf.github.io/lib/C-3PO_droid.json",
-                function(data) {
-
-                    var chart = d3po.chart({
-                        target: "#heatmap",
-                        width:440,
-                        height:923,
-                        padding: "none",
-                        zoom:true,
-                        axis:true
-                        });
-                    chart.heatmap(data,
-                                {colors: ["#111","#fc0"]}
-                               );
-
-                }
-        )
+function(data) {
+var chart = d3po.chart({
+target: "#heatmap",
+width:440,
+height:923,
+padding: "none",
+zoom:true,
+axis:true
+});
+chart.heatmap(data,
+{colors: ["#111","#fc0"]}
+);
+}
+)
 </script>
 
 
