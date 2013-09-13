@@ -15,31 +15,7 @@ Flexible where it needs to be, unobtrusive API that is amenable to embedding
 in other settings (e.g. [IPython notebook](http://ipython.org/notebook.html)),
 with helpful interactivity.
 
-Example:
-
-<div id="heatmap">
-</div>
-<script type="text/javascript" src="http://code.jquery.com/jquery-2.0.3.min.js" ></script>
-<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-<script type="text/javascript" src="http://adamlabadorf.github.io/lib/d3po.js" ></script>
-<script type="text/javascript">
-$(document).ready(function() {
-    console.log('huh?');
-    d3.json("http://adamlabadorf.github.io/lib/C-3PO_droid.json",
-            function(data) {
-                var chart = d3po.chart({
-                                        target: "#heatmap",
-                                        width:440,
-                                        height:923,
-                                        padding: "none",
-                                        zoom:true,
-                                        axis:true
-                                       });
-                chart.heatmap(data, {colors: ["#111","#fc0"]});
-            }
-        );
-);
-</script>
+[Examples](http://adamlabadorf.github.io/src/d3po/src/test.html)
 
 
 Dependencies
