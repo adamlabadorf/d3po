@@ -4,20 +4,26 @@
         <script type="text/javascript" src="http://code.jquery.com/jquery-2.0.3.min.js" ></script>
         <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
         <script type="text/javascript" src="d3po.js" ></script>
+        <style>
+            div {
+                border: 1px solid gray;
+                margin: 3px;
+            }
+        </style>
     </head>
     <body>
     <div id="scatterline">
     </div>
     <div id="boxes">
     </div>
-    <div id="mona">
+    <div id="heatmaps">
     </div>
     <script type="text/javascript">
         $(document).ready(function() {
             var chart, test_data, test_line, test_boxes;
             chart = d3po.chart({
                                     target: "#scatterline",
-                                    width: 600,
+                                    width: "fill",
                                     zoom_opts: {
                                                 geometric:true
                                                },
@@ -53,7 +59,7 @@
                     function(data) {
 
                         var chart = d3po.chart({
-                            target: "#mona",
+                            target: "#heatmaps",
                             width:500,
                             height:746,
                             padding: "none",
@@ -69,7 +75,7 @@
                     function(data) {
 
                         var chart = d3po.chart({
-                            target: "#mona",
+                            target: "#heatmaps",
                             width:440,
                             height:923,
                             padding: "none",

@@ -556,9 +556,13 @@ d3po.chart = function(opts) {
         if(chart_opts.axis) {
             chart_opts.zoom_opts = zopts;
             zoomed = function() {
-                chart_data.svg.select(".x.axis").call(chart_data.xAxis);
-                chart_data.svg.select(".y.axis").call(chart_data.yAxis);
-                chart_data.dispatch.update();
+                // we check for chart_opts.zoom here so we can turn zooming on
+                // and off on the fly
+                if(chart_opts.zoom) {
+                    chart_data.svg.select(".x.axis").call(chart_data.xAxis);
+                    chart_data.svg.select(".y.axis").call(chart_data.yAxis);
+                    chart_data.dispatch.update();
+                }
             };
             z = d3.behavior.zoom()
                       .x(chart_data.xscale)
@@ -636,7 +640,7 @@ d3po.chart = function(opts) {
                      .enter()
                      .append("text")
                      .attr({
-                        x: 3,
+                        x: 5,
                         y: function(d,i) { d.x; return 11*i+11; }
                       })
                      .text(function(d) {
@@ -650,8 +654,8 @@ d3po.chart = function(opts) {
                         stroke: "black",
                         "stroke-width": 0.5,
                         opacity: 0.8,
-                        width: tooltip_rect.width*1.1,
-                        height: tooltip_rect.height*1.1,
+                        width: tooltip_rect.width+10,
+                        height: tooltip_rect.height+10,
                         rx:5,
                         ry:5
                       });
@@ -732,12 +736,41 @@ d3po.chart = function(opts) {
 
     controls = function() {
 
+        // reset buttom
         d3.select(chart_opts.target)
                   .append("button")
                   .text("Reset")
                   .on("click",function() {
                         chart_data.dispatch.reset();
                     });
+
+        // zoom toggle
+        //FIXME: toggling zoom on and off prevents scroll events from passing
+        // through to the browser so you have to scroll off of the chart
+        d3.select(chart_opts.target)
+            .append("label")
+                .text("Zoom")
+                .attr('for',chart_opts.name+'_zoom')
+            .append("input")
+                .attr("type","checkbox")
+                .attr("id",chart_opts.name+'_zoom')
+                .call(function() {
+                    if(chart_opts.zoom) {
+                        this.node().checked = true;
+                    }
+                 })
+                .on("click",function() {
+
+                    if(chart_opts.zoom == undefined) {
+                        chart_opts.zoom = false;
+                    }
+                    if(!chart_data.zoom) {
+                        zoom(chart_opts.zoom_opts);
+                    }
+
+                    chart_opts.zoom = !chart_opts.zoom;
+
+                });
     }
 
     // set everything up
@@ -765,7 +798,7 @@ d3po.chart = function(opts) {
             padding: opts.padding || "normal",
             grid: opts.grid == false ? opts.grid : true,
             grid_opts: opts.grid_opts || {},
-            zoom: opts.zoom == false ? opts.zoom : true,
+            zoom: opts.zoom == true ? opts.zoom : false,
             zoom_opts: opts.zoom_opts || {},
             tooltips: opts.tooltips == false ? opts.tooltips : true,
             tooltips_opts: opts.tooltips_opts || {},
@@ -773,11 +806,16 @@ d3po.chart = function(opts) {
             controls: opts.contols == false ? opts.controls : true
         };
 
-        chart_opts.width = d3.select(chart_opts.target)
-                             .node()
-                             .getBoundingClientRect().width;
-        console.log(d3.select(chart_opts.target).node().getBoundingClientRect());
-        console.log(chart_opts.width);
+        if(chart_opts.width == 'fill') {
+            chart_opts.width = d3.select(chart_opts.target)
+                                 .node()
+                                 .getBoundingClientRect().width;
+        }
+        if(chart_opts.height == 'fill') {
+            chart_opts.height = d3.select(chart_opts.target)
+                                 .node()
+                                 .getBoundingClientRect().height;
+        }
 
         // increment the global chartcount so multiple charts don't
         // clobber each other
@@ -945,7 +983,8 @@ d3po.chart = function(opts) {
         chart_opts.grid && grid(chart_opts.grid_opts);
         chart_opts.zoom && zoom(chart_opts.zoom_opts);
         chart_opts.tooltips && tooltips(chart_opts.tooltip_opts);
-        chart_opts.hotkeys && hotkeys();
+        // not working yet
+        //chart_opts.hotkeys && hotkeys();
         chart_opts.controls && controls();
 
     };
