@@ -8,39 +8,32 @@ This library works as follows:
 
     var chart = d3po.chart();
     chart.lines([{x:0,y:3},{x:2,y:5}],{stroke:'blue'}])
-    chart.points([{x:0,y:3.1,size:3,fill:'blue'},{x:0.5,y:2.5,size:5,fill:'red'}]);
+    chart.scatter([{x:0,y:3.1,size:3,fill:'blue'},{x:0.5,y:2.5,size:5,fill:'red'}]);
 
 I wanted a charting library that 'just works', like those you find in R or python.
 Flexible where it needs to be, unobtrusive API that is amenable to embedding
 in other settings (e.g. [IPython notebook](http://ipython.org/notebook.html)),
 with helpful interactivity.
 
-Example:
+[Examples](http://adamlabadorf.github.io/src/d3po/src/test.html)
 
-<div id="heatmap">
-</div>
-<script type="text/javascript" src="http://code.jquery.com/jquery-2.0.3.min.js" ></script>
-<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-<script type="text/javascript" src="http://adamlabadorf.github.io/lib/d3po.js" ></script>
-<script type="text/javascript">
-$(document).ready(function() {
-    console.log('huh?');
-    d3.json("http://adamlabadorf.github.io/lib/C-3PO_droid.json",
-            function(data) {
-                var chart = d3po.chart({
-                                        target: "#heatmap",
-                                        width:440,
-                                        height:923,
-                                        padding: "none",
-                                        zoom:true,
-                                        axis:true
-                                       });
-                chart.heatmap(data, {colors: ["#111","#fc0"]});
-            }
-        );
-);
-</script>
+d3pyo
+-----
 
+d3pyo is a python wrapper for generating d3po charts. I wrote it so I could put
+d3po charts into ipython notebooks. You can use it like this (in an ipython notebook
+block, last line has to be the HTML call):
+
+    from random import random
+    import urllib2
+    from IPython.display import HTML
+    exec urllib2.urlopen('http://adamlabadorf.github.io/src/d3po/src/d3pyo.py').read()
+    c = Chart({'name':'awesome_interactive_chart'})
+    c.scatter([dict(x=random(),y=random(),size=random()) for _ in range(10)])
+    HTML(c.js)
+    
+The python `Chart` class has all of the same methods exposed as the functions on the
+`d3po.chart` object.
 
 Dependencies
 ------------
@@ -63,5 +56,6 @@ Implemented:
 
 Still lots of features to implement:
 
+    - boxplots
     - search feature
     - documentation (nvd3 is pretty bad about this as of this writing)
