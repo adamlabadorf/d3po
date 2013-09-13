@@ -18,8 +18,6 @@
             chart = d3po.chart({
                                     target: "#scatterline",
                                     width: 600,
-                                    xlim: [-3,3],
-                                    ylim: [-2,2],
                                     zoom_opts: {
                                                 geometric:true
                                                },
@@ -62,12 +60,29 @@
                             zoom:true,
                             axis:true
                             });
+                        chart.heatmap(data);
+
+                    }
+            )
+
+            d3.json("C-3PO_droid.json",
+                    function(data) {
+
+                        var chart = d3po.chart({
+                            target: "#mona",
+                            width:440,
+                            height:923,
+                            padding: "none",
+                            zoom:true,
+                            axis:true
+                            });
                         chart.heatmap(data,
-                                    {anchor: "center"}
+                                    {colors: ["#111","#fc0"]}
                                    );
 
                     }
             )
+
         });
     </script>
     </body>
