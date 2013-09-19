@@ -1,20 +1,58 @@
 import json
 
+VERSION = 0.1
+
 JS = """\
 <div id="%(name)s">
 </div>
-<script type="text/javascript" src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-<script type="text/javascript" src="http://adamlabadorf.github.io/lib/d3po.js" ></script>
 <script type="text/javascript">
-    setTimeout(function() {
-            var chart, data;
-            chart = d3po.chart(
-                %(chart_opts)s
-                );
-            %(content)s
-    },500); // need to wait a couple milliseconds while the DOM updates
+    try {
+        $;
+        d3po;
+
+        var chart, data;
+        chart = d3po.chart(
+            %(chart_opts)s
+            );
+        %(content)s
+
+    } catch(e) {
+        document.getElementsById("#%(name)s")
+                .innerHTML = "Exception occurred: " + e + "<br/>" +
+                             "Could not load chart."
+    }
 </script>
 """
+
+def d3po_init() :
+    return """\
+    <script language="JavaScript">
+    console.log("d3pyo v%s, initializing...");
+    function loadJS(src) {
+        var oHead = document.getElementsByTagName('HEAD').item(0);
+        var oScript= document.createElement("script");
+        oScript.type = "text/javascript";
+        oScript.src=src;
+        oHead.appendChild( oScript);
+        
+    };
+
+    try {
+        $;
+        console.log("jquery loaded");
+    } catch(e) {
+        console.log("loading jquery");
+        loadJS("http://d3js.org/d3.v3.min.js");
+    }
+
+    try {
+        d3po;
+        console.log("d3po loaded");
+    } catch(e) {
+        console.log("loading d3po");
+        loadJS("http://adamlabadorf.github.io/lib/d3po.js");
+    }
+    </script>"""%str(VERSION)
 
 class Chart(object) :
 
