@@ -17,6 +17,7 @@ JS = """\
         %(content)s
 
     } catch(e) {
+        console.log(e);
         setTimeout(function() {
             document.getElementById("#%(name)s")
                     .innerHTML = "Exception occurred: " + e + "<br/>" +
