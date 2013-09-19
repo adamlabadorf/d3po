@@ -43,6 +43,21 @@ def d3po_init() :
         
     };
 
+    // I was trying to figure out how to make the
+    // browser wait until things were loaded
+    var checkLoaded = function(varname) {
+        setTimeout(function() {
+            try {
+                console.log('checking for '+varname);
+                eval(varname);
+                console.log(varname+' loaded');
+            } catch(e) {
+                console.log('checkLoaded('+varname+'): '+e);
+                setTimeout(checkLoaded(varname),100);
+            }
+        },100);
+    }
+
     try { $; console.log("jquery loaded"); }
     catch(e) {
         console.log("loading jquery");
