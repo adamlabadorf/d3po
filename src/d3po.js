@@ -5,13 +5,16 @@ var d3po = window.d3po || {
     curr_chart: null
     };
 
-d3po.css = '<style type="text/css">' +
-           'svg { font: 10px sans-serif; }' +
-           '.axis path { fill: none; stroke: #333; }' +
-           '.axis line { fill: none; stroke: #999; stroke-dasharray: 2,2; }' +
-           '.label { color: black; }' +
-           '</style>';
-if($) { $(d3po.css).appendTo("head"); }
+if(!window.d3po) {
+    d3po.css = '<style type="text/css">' +
+               'svg { font: 10px sans-serif; }' +
+               '.axis path { fill: none; stroke: #333; }' +
+               '.axis line { fill: none; stroke: #999; stroke-dasharray: 2,2; }' +
+               '.label { color: black; }' +
+               '</style>';
+
+    document.getElementsByTagName("head")[0].appendChild(d3po.css);
+}
 
 window.d3po = d3po;
 
