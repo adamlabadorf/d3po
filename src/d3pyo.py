@@ -10,18 +10,18 @@ JS = """\
         $;
         d3po;
 
+        console.log('libraries loaded, making chart');
         var chart, data;
         chart = d3po.chart(
             %(chart_opts)s
             );
         %(content)s
 
+        console.log('done with chart');
+
     } catch(e) {
-        console.log(e);
+        console.log('caught error:'+e);
         setTimeout(function() {
-            document.getElementById("#%(name)s")
-                    .innerHTML = "Exception occurred: " + e + "<br/>" +
-                                 "Could not load chart."
         },200);
     }
 </script>
