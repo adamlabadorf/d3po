@@ -11,13 +11,13 @@ JS = """\
         d3po;
 
         console.log('libraries loaded, making chart');
-        var chart, data;
-        chart = d3po.chart(
-            %(chart_opts)s
-            );
-        %(content)s
-
-        console.log('done with chart');
+        setTimeout(function() {
+            var chart, data;
+            chart = d3po.chart(
+                %(chart_opts)s
+                );
+            %(content)s
+        },200); // have to wait for DOM to update
 
     } catch(e) {
         console.log('caught error:'+e);
