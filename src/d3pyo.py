@@ -26,6 +26,9 @@ JS = """\
 
 def d3po_init() :
     return """\
+    <div>
+        d3pyo initialized
+    </div>
     <script language="JavaScript">
     console.log("d3pyo v%s, initializing...");
     function loadJS(src) {
