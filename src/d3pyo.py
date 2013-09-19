@@ -1,6 +1,6 @@
 import json
 
-VERSION = 0.2
+VERSION = 0.3
 
 JS = """\
 <div id="%(name)s">
