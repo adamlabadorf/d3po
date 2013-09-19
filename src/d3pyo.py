@@ -19,7 +19,7 @@ JS = """\
                 );
             %(content)s
 
-            window.clearInterval(intId_%(names)s);
+            window.clearInterval(intId_%(name)s);
         } catch(e) {
             console.log('not loaded yet: '+e);
         }
