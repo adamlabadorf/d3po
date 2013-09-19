@@ -5,7 +5,7 @@ var d3po = window.d3po || {
     curr_chart: null
     };
 
-if(!window.d3po) {
+if(window.d3po === undefined) {
     d3po.css = 'svg { font: 10px sans-serif; }' +
                '.axis path { fill: none; stroke: #333; }' +
                '.axis line { fill: none; stroke: #999; stroke-dasharray: 2,2; }' +
