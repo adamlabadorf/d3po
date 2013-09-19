@@ -6,14 +6,15 @@ var d3po = window.d3po || {
     };
 
 if(!window.d3po) {
-    d3po.css = '<style type="text/css">' +
-               'svg { font: 10px sans-serif; }' +
+    d3po.css = 'svg { font: 10px sans-serif; }' +
                '.axis path { fill: none; stroke: #333; }' +
                '.axis line { fill: none; stroke: #999; stroke-dasharray: 2,2; }' +
-               '.label { color: black; }' +
-               '</style>';
+               '.label { color: black; }';
 
-    document.getElementsByTagName("head")[0].appendChild(d3po.css);
+    var d3poStyle = document.createElement("head");
+    d3poStyle.type = "text/css";
+    d3poStyle.innerHTML = d3po.css;
+    document.getElementsByTagName("head")[0].appendChild(d3poStyle);
 }
 
 window.d3po = d3po;
