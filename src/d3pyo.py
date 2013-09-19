@@ -6,24 +6,24 @@ JS = """\
 <div id="%(name)s">
 </div>
 <script type="text/javascript">
-    try {
-        $;
-        d3po;
+    var intId_%(name)s = window.setInterval(
+    function() {
+        try {
+            $;
+            d3po;
 
-        console.log('libraries loaded, making chart');
-        setTimeout(function() {
+            console.log('libraries loaded, making chart');
             var chart, data;
             chart = d3po.chart(
                 %(chart_opts)s
                 );
             %(content)s
-        },200); // have to wait for DOM to update
 
-    } catch(e) {
-        console.log('caught error:'+e);
-        setTimeout(function() {
-        },200);
-    }
+            window.clearInterval(intId_%(names)s);
+        } catch(e) {
+            console.log('not loaded yet: '+e);
+        }
+    },500);
 </script>
 """
 
