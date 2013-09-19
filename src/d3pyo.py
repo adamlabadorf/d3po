@@ -8,6 +8,7 @@ JS = """\
 <script type="text/javascript">
     var intId_%(name)s = window.setInterval(
     function() {
+        console.log('running setInterval '+varId_%(name)s);
         try {
             $;
             d3po;
