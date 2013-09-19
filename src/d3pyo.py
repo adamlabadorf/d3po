@@ -8,9 +8,13 @@ JS = """\
 <script type="text/javascript">
     var intId_%(name)s = window.setInterval(
     function() {
-        console.log('running setInterval '+varId_%(name)s);
+        console.log('running setInterval '+intId_%(name)s);
+        console.log($);
+        console.log(d3);
+        console.log(d3po);
         try {
             $;
+            d3;
             d3po;
 
             console.log('libraries loaded, making chart');
