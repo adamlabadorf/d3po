@@ -1,6 +1,6 @@
 import json
 
-VERSION = 0.1
+VERSION = 0.2
 
 JS = """\
 <div id="%(name)s">
@@ -30,10 +30,10 @@ JS = """\
 def d3po_init() :
     return """\
     <div>
-        d3pyo initialized
+        d3pyo initialized, v%(version)s
     </div>
     <script language="JavaScript">
-    console.log("d3pyo v%s, initializing...");
+    console.log("d3pyo v%(version)s, initializing...");
     function loadJS(src) {
         var oHead = document.getElementsByTagName('HEAD').item(0);
         var oScript= document.createElement("script");
@@ -43,22 +43,24 @@ def d3po_init() :
         
     };
 
-    try {
-        $;
-        console.log("jquery loaded");
-    } catch(e) {
+    try { $; console.log("jquery loaded"); }
+    catch(e) {
         console.log("loading jquery");
         loadJS("http://d3js.org/d3.v3.min.js");
     }
 
-    try {
-        d3po;
-        console.log("d3po loaded");
-    } catch(e) {
+    try { d3; console.log("d3 loaded"); }
+    catch(e) {
+        console.log("loading d3");
+        loadJS("http://d3js.org/d3.v3.min.js");
+    }
+
+    try { d3po; console.log("d3po loaded"); }
+    catch(e) {
         console.log("loading d3po");
         loadJS("http://adamlabadorf.github.io/lib/d3po.js");
     }
-    </script>"""%str(VERSION)
+    </script>"""%{'name':str(VERSION)}
 
 class Chart(object) :
 
