@@ -60,7 +60,7 @@ def d3po_init() :
         console.log("loading d3po");
         loadJS("http://adamlabadorf.github.io/lib/d3po.js");
     }
-    </script>"""%{'name':str(VERSION)}
+    </script>"""%{'version':str(VERSION)}
 
 class Chart(object) :
 
