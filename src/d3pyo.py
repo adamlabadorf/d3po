@@ -17,9 +17,11 @@ JS = """\
         %(content)s
 
     } catch(e) {
-        document.getElementsById("#%(name)s")
-                .innerHTML = "Exception occurred: " + e + "<br/>" +
-                             "Could not load chart."
+        setTimeout(function() {
+            document.getElementById("#%(name)s")
+                    .innerHTML = "Exception occurred: " + e + "<br/>" +
+                                 "Could not load chart."
+        },200);
     }
 </script>
 """
