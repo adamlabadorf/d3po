@@ -1001,10 +1001,10 @@ d3po.chart = function(opts) {
             scatter:scatter,
             boxes:boxes,
             heatmap:heatmap,
-            bars:bars,
-            axis:axis,
-            chart_data: chart_data,
-            opts: chart_opts,
-            init:init
+            bars:bars
+            //axis:axis,
+            //chart_data: chart_data,
+            //opts: chart_opts,
+            //init:init
            };
 };
