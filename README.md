@@ -69,7 +69,8 @@ Still lots of features to implement:
     - text x and y on heatmaps
     - text x and y tick labels
     - more customizable databoxes (with plots in them?!)
-
+    - only draw elements that are in the chart area (performance issue)
+    
 Fixme:
 
     - fill-opacity, stroke on databox mouseover
