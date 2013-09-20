@@ -1,4 +1,4 @@
-## d3po
+# d3po
 
 Yet another Javascript library for making d3 charts. After playing with
 [nvd3](http://nvd3.org) I found it wasn't quite as usable as I would like,
