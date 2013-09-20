@@ -9,7 +9,6 @@ JS = """\
     var intId_%(name)s = window.setInterval(
     function() {
         try {
-            $;
             d3;
             d3po;
 
