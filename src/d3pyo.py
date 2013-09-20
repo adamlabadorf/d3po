@@ -1,6 +1,6 @@
 import json
 
-VERSION = "0.3.2"
+VERSION = "0.3.4"
 
 JS = """\
 <div id="%(name)s">
@@ -8,16 +8,11 @@ JS = """\
 <script type="text/javascript">
     var intId_%(name)s = window.setInterval(
     function() {
-        console.log('running setInterval '+intId_%(name)s);
-        console.log($);
-        console.log(d3);
-        console.log(d3po);
         try {
             $;
             d3;
             d3po;
 
-            console.log('libraries loaded, making chart');
             var chart, data;
             chart = d3po.chart(
                 %(chart_opts)s
@@ -34,11 +29,10 @@ JS = """\
 
 def d3po_init() :
     return """\
-    <div>
-        d3pyo initialized, v%(version)s
+    <div id="d3po_init">
+        d3pyo v%(version)s, initialized<br/>
     </div>
     <script language="JavaScript">
-    console.log("d3pyo v%(version)s, initializing...");
     function loadJS(src) {
         var oHead = document.getElementsByTagName('HEAD').item(0);
         var oScript= document.createElement("script");
@@ -59,6 +53,17 @@ def d3po_init() :
         console.log("loading d3po");
         loadJS("http://adamlabadorf.github.io/lib/d3po.js");
     }
+
+    var intId_init = window.setInterval(
+    function() {
+        try {
+            d3po;
+            document.getElementById("#d3po_init").innerHTML += "d3po v"+d3po.version;
+            window.clearInterval(intId_init);
+        } catch(e) {
+            console.log(e);
+        }
+    },500);
     </script>"""%{'version':str(VERSION)}
 
 class Chart(object) :
