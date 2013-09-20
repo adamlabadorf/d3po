@@ -65,3 +65,12 @@ Still lots of features to implement:
     - legends
     - chart title
     - pandas/numpy functions in d3pyo
+    - chart export to file
+    - text x and y on heatmaps
+    - text x and y tick labels
+    - more customizable databoxes (with plots in them?!)
+
+Fixme:
+
+    - fill-opacity, stroke on databox mouseover
+    - mouse scroll listener removal on zoom removal (manipulate d3 internal)
