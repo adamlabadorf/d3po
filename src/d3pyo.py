@@ -30,7 +30,7 @@ JS = """\
 def d3po_init() :
     return """\
     <div id="d3po_init">
-        d3pyo v%(version)s, initialized<br/>
+        d3pyo v%(version)s<br/>
     </div>
     <script language="JavaScript">
     function loadJS(src) {
@@ -58,7 +58,7 @@ def d3po_init() :
     function() {
         try {
             d3po;
-            document.getElementById("#d3po_init").innerHTML += "d3po v"+d3po.version;
+            document.getElementById("d3po_init").innerHTML += "d3po v"+d3po.version;
             window.clearInterval(intId_init);
         } catch(e) {
             console.log(e);
