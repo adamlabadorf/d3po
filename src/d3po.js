@@ -173,7 +173,7 @@ d3po.chart = function(opts) {
         grid,
         zoom,
         legend,
-        tooltips,
+        databox,
         hotkeys,
         controls,
         init;
@@ -349,32 +349,32 @@ d3po.chart = function(opts) {
                   });
 
         get_dims = function(d) {
-            return [Math.abs(chart_data.xscale(d.w)-chart_data.xscale(0)),
-                    Math.abs(chart_data.yscale(d.h)-chart_data.yscale(0))];
+            return [Math.abs(chart_data.xscale(d.w || 1)-chart_data.xscale(0)),
+                    Math.abs(chart_data.yscale(d.h || 1)-chart_data.yscale(0))];
         };
 
         min_x = d3.min(data,function(d) {
             if(bopts.anchor == "center") {
-                return d.x-d.w/2;
+                return d.x-(d.w || 1)/2;
             }
             return d.x;
         });
         max_x = d3.max(data,function(d) {
             if(bopts.anchor == "center") {
-                return d.x+d.w/2;
+                return d.x+(d.w || 1)/2;
             }
             return d.x+d.w;
         });
 
         min_y = d3.min(data,function(d) {
             if(bopts.anchor == "center") {
-                return d.y-d.h/2;
+                return d.y-(d.h || 1)/2;
             }
             return d.y;
         });
         max_y = d3.max(data,function(d) {
             if(bopts.anchor == "center") {
-                return d.y+d.h/2;
+                return d.y+(d.h || 1)/2;
             }
             return d.y+d.h;
         });
@@ -583,7 +583,7 @@ d3po.chart = function(opts) {
         console.log('not implemented yet');
     };
 
-    tooltips = function(tooltip_opts) {
+    databox = function(tooltip_opts) {
         var topts = tooltip_opts || {},
             id,
             tooltip_g,
@@ -806,8 +806,8 @@ d3po.chart = function(opts) {
             grid_opts: opts.grid_opts || {},
             zoom: opts.zoom == true ? opts.zoom : false,
             zoom_opts: opts.zoom_opts || {},
-            tooltips: opts.tooltips == false ? opts.tooltips : true,
-            tooltips_opts: opts.tooltips_opts || {},
+            databox: opts.databox == false ? opts.databox : true,
+            databox_opts: opts.databox_opts || {},
             hotkeys: opts.hotkeys == false ? opts.hotkeys : true,
             controls: opts.contols == false ? opts.controls : true
         };
@@ -988,7 +988,7 @@ d3po.chart = function(opts) {
         chart_opts.axis && axis(chart_opts.axis_opts);
         chart_opts.grid && grid(chart_opts.grid_opts);
         chart_opts.zoom && zoom(chart_opts.zoom_opts);
-        chart_opts.tooltips && tooltips(chart_opts.tooltip_opts);
+        chart_opts.databox && databox(chart_opts.tooltip_opts);
         // not working yet
         //chart_opts.hotkeys && hotkeys();
         chart_opts.controls && controls();
