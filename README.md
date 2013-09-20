@@ -16,7 +16,7 @@ in other settings (e.g. [IPython notebook](http://ipython.org/notebook.html)),
 with helpful interactivity.
 
 [Examples](http://adamlabadorf.github.io/src/d3po/src/test.html)
-
+[IPython notebook](http://nbviewer.ipython.org/url/adamlabadorf.github.io/src/d3po/src/d3po.ipynb)
 
 d3pyo
 -----
