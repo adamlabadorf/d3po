@@ -43,7 +43,7 @@ The python `Chart` class has all of the same methods exposed as the functions on
 
 # Dependencies
 
-[jQuery](http://jquery.com) and [d3](http://d3js.org).
+[d3](http://d3js.org).
 
 # Work in progress
 
@@ -51,15 +51,17 @@ Implemented:
 
     - scatter
     - lines
-    - boxes (heatmap primitive, bar charts)
+    - boxes (heatmap primitive)
     - heatmap
     - axes
-    - tooltips on hover over points
+    - databox on hover over points
     - d3 zoom behavior (can be turned off)
     - html-based controls
 
 Still lots of features to implement:
 
-    - boxplots
+    - bar charts convenience function
     - search feature
-    - documentation (nvd3 is pretty bad about this as of this writing)
+    - legends
+    - chart title
+    - pandas/numpy functions in d3pyo
