@@ -1,5 +1,4 @@
-d3po
-====
+## d3po
 
 Yet another Javascript library for making d3 charts. After playing with
 [nvd3](http://nvd3.org) I found it wasn't quite as usable as I would like,
@@ -17,9 +16,11 @@ with helpful interactivity.
 
 [Examples](http://adamlabadorf.github.io/src/d3po/src/test.html)
 
+[IPython notebook](http://nbviewer.ipython.org/url/adamlabadorf.github.io/src/d3po/src/d3po.ipynb)
 
-d3pyo
------
+[Documentation](Documentation.md)
+
+# d3pyo
 
 d3pyo is a python wrapper for generating d3po charts. I wrote it so I could put
 d3po charts into ipython notebooks. You can use it like this (in an ipython notebook
@@ -29,20 +30,22 @@ block, last line has to be the HTML call):
     import urllib2
     from IPython.display import HTML
     exec urllib2.urlopen('http://adamlabadorf.github.io/src/d3po/src/d3pyo.py').read()
+    # this initializes d3po and its dependencies, put before other calls
+    HTML(d3po_init())
+
+    # in a different box
     c = Chart({'name':'awesome_interactive_chart'})
     c.scatter([dict(x=random(),y=random(),size=random()) for _ in range(10)])
     HTML(c.js)
-    
+
 The python `Chart` class has all of the same methods exposed as the functions on the
 `d3po.chart` object.
 
-Dependencies
-------------
+# Dependencies
 
 [jQuery](http://jquery.com) and [d3](http://d3js.org).
 
-Work in progress
-----------------
+# Work in progress
 
 Implemented:
 

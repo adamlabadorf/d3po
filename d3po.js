@@ -1,22 +1,25 @@
 var d3po = window.d3po || {
-    version: '0.1',
+    version: '0.1.1',
     chartcount: 0,
     // this keeps track of one chart globally for routing keystroke events etc.
     curr_chart: null
     };
 
-// this gets added to the DOM for every chart call, but meh...
-d3po.css = 'svg { font: 10px sans-serif; }' +
-           '.axis path { fill: none; stroke: #333; }' +
-           '.axis line { fill: none; stroke: #999; stroke-dasharray: 2,2; }' +
-           '.label { color: black; }';
+if(d3po.css === undefined) {
 
-var d3poStyle = document.createElement("head");
-d3poStyle.type = "text/css";
-d3poStyle.innerHTML = d3po.css;
-document.getElementsByTagName("head")[0].appendChild(d3poStyle);
+    // this gets added to the DOM for every chart call, but meh...
+    d3po.css = 'svg { font: 10px sans-serif; }' +
+               '.axis path { fill: none; stroke: #333; }' +
+               '.axis line { fill: none; stroke: #999; stroke-dasharray: 2,2; }' +
+               '.label { color: black; }';
 
-window.d3po = d3po;
+    var d3poStyle = document.createElement("style");
+    d3poStyle.type = "text/css";
+    d3poStyle.innerHTML = d3po.css;
+    document.getElementsByTagName("head")[0].appendChild(d3poStyle);
+
+    window.d3po = d3po;
+}
 
 d3po.util = {
     transform: function(transf,elem) {
@@ -998,10 +1001,10 @@ d3po.chart = function(opts) {
             scatter:scatter,
             boxes:boxes,
             heatmap:heatmap,
-            bars:bars,
-            axis:axis,
-            chart_data: chart_data,
-            opts: chart_opts,
-            init:init
+            bars:bars
+            //axis:axis,
+            //chart_data: chart_data,
+            //opts: chart_opts,
+            //init:init
            };
 };
