@@ -18,7 +18,7 @@ with helpful interactivity.
 
 [IPython notebook](http://nbviewer.ipython.org/url/adamlabadorf.github.io/src/d3po/src/d3po.ipynb)
 
-[Documentation](Documentation.md)
+[Documentation](https://github.com/adamlabadorf/d3po/wiki/Documentation)
 
 # d3pyo
 
