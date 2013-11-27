@@ -50,7 +50,7 @@ def d3po_init() :
     try { d3po; console.log("d3po loaded"); }
     catch(e) {
         console.log("loading d3po");
-        loadJS("http://adamlabadorf.github.io/lib/d3po.js");
+        loadJS("http://adamlabadorf.github.io/d3po/d3po.js");
     }
 
     var intId_init = window.setInterval(
