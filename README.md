@@ -18,7 +18,7 @@ with helpful interactivity.
 
 [IPython notebook](http://nbviewer.ipython.org/url/adamlabadorf.github.io/src/d3po/src/d3po.ipynb)
 
-[Documentation](Documentation.md)
+[Documentation](https://github.com/adamlabadorf/d3po/wiki/Documentation)
 
 # d3pyo
 
@@ -29,7 +29,7 @@ block, last line has to be the HTML call):
     from random import random
     import urllib2
     from IPython.display import HTML
-    exec urllib2.urlopen('http://adamlabadorf.github.io/src/d3po/src/d3pyo.py').read()
+    exec urllib2.urlopen('http://adamlabadorf.github.io/d3po/d3pyo.py').read()
     # this initializes d3po and its dependencies, put before other calls
     HTML(d3po_init())
 
