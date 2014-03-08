@@ -1,0 +1,54 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>d3po test</title>
+        <script type="text/javascript" src="http://code.jquery.com/jquery-2.0.3.min.js" ></script>
+        <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+        <script type="text/javascript" src="d3po_coffee.js" ></script>
+        <script type="text/javascript">
+            var data, chart;
+            $(document).ready(function() {
+                console.log(d3po.chart);
+                data = d3po.randomLine();
+                chart = d3po.chart({
+                            target: "#d3po",
+                            zoom:true,
+                            axis:true
+                            });
+                //chart.axis()
+                //chart.lines(data,{junk:"stuff"});
+
+                /*
+                d3.json("C-3PO_droid.json",
+                    function(data) {
+
+                        var chart = d3po.chart({
+                            target: "#d3po",
+                            width:440,
+                            height:923,
+                            padding: "none",
+                            zoom:true,
+                            axis:true
+                            });
+                        console.log(chart.heatmap);
+                        chart.heatmap(data,
+                                    {colors: ["#111","#fc0"]}
+                                   );
+
+                    }
+                )
+                */
+            });
+        </script>
+
+        <style>
+            div {
+                margin: auto;
+                border: 1px solid gray;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="d3po"></div>
+    </body>
+</html>
